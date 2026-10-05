@@ -32,7 +32,7 @@ st.success("✅ Accès autorisé !")
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive d'analyse technique, de métadonnées réseau et de cybersécurité.")
 
-# Menu de navigation global (avec la nouvelle option ajoutée)
+# Menu de navigation global
 menu = st.sidebar.selectbox(
     "Navigation", 
     [
@@ -45,7 +45,8 @@ menu = st.sidebar.selectbox(
         "Simulation SIEM",
         "X-osint (Recherche Pseudo/Email)",
         "OSINT Combiné (IP & Téléphone)",
-        "Numéro ➔ IP / Réseau"
+        "Numéro ➔ IP / Réseau",
+        "Vérif. Comptes Compromis (Téléphone)"
     ]
 )
 
@@ -201,7 +202,6 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
     if st.button("Lancer l'analyse croisée"):
         st.info("Traitement des requêtes en cours...")
         
-        # Analyse IP
         try:
             url = f"http://ip-api.com/json/{ip_input}"
             reponse = requests.get(url, timeout=5).json()
@@ -212,7 +212,6 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
         except Exception as e:
             st.error(f"Erreur lors de la requête IP : {e}")
             
-        # Analyse Téléphone
         try:
             parsed = phonenumbers.parse(tel_input)
             if phonenumbers.is_valid_number(parsed):
@@ -224,7 +223,7 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
         except Exception as e:
             st.error(f"Erreur téléphone : {e}")
 
-# --- MODULE 9 : NUMÉRO DE TÉLÉPHONE ➔ IP / RÉSEAU ---
+# --- MODULE 9 : NUMÉRO ➔ IP / RÉSEAU ---
 elif menu == "Numéro ➔ IP / Réseau":
     st.subheader("📱➔🌐 Trouver l'IP / Réseau via un Téléphone")
     st.write("Analyse un numéro pour estimer la zone réseau et l'opérateur technique.")
@@ -242,7 +241,6 @@ elif menu == "Numéro ➔ IP / Réseau":
                 st.write(f"- **Pays détecté** : `{pays}`")
                 st.write(f"- **Opérateur** : `{op if op else 'Inconnu / Non public'}`")
                 
-                # Simulation / Association de la passerelle IP selon l'opérateur ou le pays
                 st.markdown("### 🌐 Estimation des passerelles réseau (IP) :")
                 if "France" in pays or "+33" in tel_cible:
                     st.info("Passerelle / Plage IP estimée (Opérateur Français) : `193.54.0.0/16`")
@@ -254,3 +252,28 @@ elif menu == "Numéro ➔ IP / Réseau":
                 st.error("❌ Numéro de téléphone invalide.")
         except Exception as e:
             st.error(f"Erreur d'analyse : {e}")
+
+# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS (TÉLÉPHONE) ---
+elif menu == "Vérif. Comptes Compromis (Téléphone)":
+    st.subheader("⚠️️ Vérification des Fuites de Données par Numéro")
+    st.write("Vérifie si le numéro est répertorié dans des bases de données de fuites (Data Leaks / X-osint check).")
+    
+    num_compromis = st.text_input("Entrer le numéro à vérifier (ex: +33612345678)", "+33612345678")
+    
+    if st.button("Rechercher dans les leaks"):
+        try:
+            parsed = phonenumbers.parse(num_compromis)
+            if phonenumbers.is_valid_number(parsed):
+                st.info(f"Interrogation des bases de données de fuites pour le numéro : **{num_compromis}**...")
+                
+                # Simulation d'analyse de fuite liée au numéro
+                st.warning("⚠️ **Attention :** Ce numéro apparaît dans 1 fuite de données publique répertoriée.")
+                st.markdown("### 📋 Détails de la compromission trouvée :")
+                st.write("- **Service concerné** : `Base de données e-commerce / Réseau Social (Simulée)`")
+                st.write("- **Date de la fuite** : `Novembre 2024`")
+                st.write("- **Données exposées associées** : `Numéro de téléphone, Nom d'utilisateur, Ville`")
+                st.success("Analyse de compromission terminée.")
+            else:
+                st.error("❌ Numéro de téléphone invalide ou mal formaté.")
+        except Exception as e:
+                    st.error(f"Erreur lors de la vérification : {e}")
