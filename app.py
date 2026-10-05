@@ -1,15 +1,14 @@
 import streamlit as st
 import datetime
-import random
+import socket
+import requests
 import phonenumbers
 from phonenumbers import geocoder, carrier, number_type
 
-# Configuration de la page
-st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
+st.set_page_config(page_title="Security Checker (Réel)", page_icon="🛡️")
 
-# --- SYSTÈME D'AUTHENTIFICATION UNIQUE ---
+# --- AUTHENTIFICATION ---
 st.title("🔐 Accès Restreint - Security Checker")
-
 MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
 
 def check_password():
@@ -28,88 +27,77 @@ if not st.session_state["password_correct"]:
     st.stop()
 
 st.success("✅ Accès autorisé !")
-
-st.title("🛡️ Security Checker (X-Hacker)")
-st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
+st.title("🛡️ Security Checker — Outils Réels")
 
 menu = st.sidebar.selectbox(
     "Navigation", 
-    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone (Réel)", "Interception (Métadonnées)", "Simulation SIEM"]
+    ["Géolocalisation IP Réelle", "Scan de Ports Réel", "OSINT Téléphone (Réel)"]
 )
 
-# --- MODULE 1 : CHIFFREMENT D'IP ---
-if menu == "Chiffrement IP":
-    st.subheader("📁 Créer & Chiffrer un rapport")
-    ip_cible = st.text_input("IP cible à simuler", "192.168.1.10")
-    cle_secrete = st.text_input("Clé secrète de chiffrement", type="password")
+# --- MODULE 1 : VRAIE GÉOLOCALISATION D'UNE IP ---
+if menu == "Géolocalisation IP Réelle":
+    st.subheader("🌍 Vraie Localisation d'une Adresse IP (Publique)")
+    ip_saisie = st.text_input("Entrez une adresse IP publique (ex: 8.8.8.8)", "8.8.8.8")
     
-    if st.button("Générer et Chiffrer"):
-        st.success(f"Rapport généré pour la cible {ip_cible} et chiffré avec succès !")
-        st.code("XLFYfy7...[données_chiffrées]...329A", language="text")
+    if st.button("Interroger la base mondiale"):
+        try:
+            # Requête réelle vers une API publique de géolocalisation IP
+            url = f"http://ip-api.com/json/{ip_saisie}"
+            reponse = requests.get(url, timeout=5).json()
+            
+            if reponse.get("status") == "success":
+                st.success("Données récupérées avec succès depuis le réseau mondial !")
+                st.write(- f"**Pays** : {reponse.get('country')} ({reponse.get('countryCode')})")
+                st.write(f"- **Région / Ville** : {reponse.get('regionName')} - {reponse.get('city')}")
+                st.write(f"- **Fournisseur d'accès (FAI / ISP)** : {reponse.get('isp')}")
+                st.write(f"- **Organisation** : {reponse.get('org')}")
+                st.write(f"- **Coordonnées GPS approximatives** : Lat: {reponse.get('lat')}, Lon: {reponse.get('lon')}")
+            else:
+                st.error("❌ Impossible de géolocaliser cette IP (IP invalide ou privée).")
+        except Exception as e:
+            st.error(f"Erreur de connexion à l'API : {e}")
 
-# --- MODULE 2 : SIMULATION NMAP ---
-elif menu == "Simulation Nmap":
-    st.subheader("🔍 Simulation Nmap")
-    ip_nmap = st.text_input("IP ou domaine cible", "192.168.1.1")
+# --- MODULE 2 : VRAI SCAN DE PORTS (TCP SOCKET) ---
+elif menu == "Scan de Ports Réel":
+    st.subheader("🔍 Vrai Scan de Ports (TCP)")
+    st.write("Teste si des ports spécifiques sont réellement ouverts sur une cible autorisée.")
     
-    if st.button("Lancer le balayage"):
-        st.write("Port 21/tcp : **FERMÉ**")
-        st.info("Port 22/tcp : **OUVERT** — Service: SSH")
-        st.write("Port 80/tcp : **OUVERT** — Service: HTTP")
-        st.info("Port 443/tcp : **OUVERT** — Service: HTTPS")
+ip_cible = st.text_input("Adresse IP ou Domaine cible", "scanme.nmap.org")
+ports_a_tester = [21, 22, 80, 443, 8080]
 
-# --- MODULE 3 : OSINT TÉLÉPHONE (VRAIE ANALYSE TECHNIQUE) ---
+if st.button("Lancer le vrai scan TCP"):
+    st.write(f"Analyse des ports sur **{ip_cible}** en cours...")
+    
+    for port in ports_a_tester:
+        try:
+            # Création d'un vrai socket réseau
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1.5) # Temps limite de réponse
+            resultat = s.connect_ex((ip_cible, port))
+            s.close()
+            
+            if resultat == 0:
+                st.success(f"Port {port}/tcp : **OUVERT** 🟢")
+            else:
+                st.write(f"Port {port}/tcp : Fermé / Filtré 🔴")
+        except Exception as e:
+            st.error(f"Erreur sur le port {port} : {e}")
+
+# --- MODULE 3 : OSINT TÉLÉPHONE RÉEL ---
 elif menu == "OSINT Téléphone (Réel)":
     st.subheader("📱 Analyse OSINT Réelle d'un Numéro")
-    st.write("Entre un numéro au format international (ex: `+213562516680` ou `+33612345678`)")
-    numero_input = st.text_input("Numéro de téléphone cible", "+213562516680")
+    numero_input = st.text_input("Numéro au format international", "+33612345678")
     
-    if st.button("Lancer l'analyse réelle"):
+    if st.button("Analyser le numéro"):
         try:
-            # Analyse réelle du numéro via la bibliothèque phonenumbers
-            parsed_number = phonenumbers.parse(numero_input)
-            
-            if phonenumbers.is_valid_number(parsed_number):
-                pays_reel = geocoder.description_for_number(parsed_number, "fr")
-                operateur_reel = carrier.name_for_number(parsed_number, "fr")
-                type_ligne = number_type(parsed_number)
-                
-                # Traduction du type de ligne
-                types_dict = {
-                    phonenumbers.PhoneNumberType.MOBILE: "Téléphone Mobile",
-                    phonenumbers.PhoneNumberType.FIXED_LINE: "Ligne Fixe",
-                    phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile",
-                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)"
-                }
-                libelle_type = types_dict.get(type_ligne, "Inconnu / Autre")
-                
-                st.success(f"Analyse réussie pour le numéro : {numero_input}")
-                st.markdown("### 📊 Résultats techniques réels :")
-                st.write(f"- **Pays / Région d'origine** : `{pays_reel if pays_reel else 'Non spécifié'}`")
-                st.write(f"- **Opérateur réseau** : `{operateur_reel if operateur_reel else 'Opérateur non détecté (ou masqué par portabilité)'}`")
-                st.write(f"- **Type de ligne** : `{libelle_type}`")
-                st.write(f"- **Format international normalisé** : `{phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
+            parsed = phonenumbers.parse(numero_input)
+            if phonenumbers.is_valid_number(parsed):
+                pays = geocoder.description_for_number(parsed, "fr")
+                op = carrier.name_for_number(parsed, "fr")
+                st.success("Numéro valide analysé !")
+                st.write(f"- **Pays** : {pays}")
+                st.write(f"- **Opérateur** : {op if op else 'Non public / Porté'}")
             else:
-                st.error("❌ Ce numéro semble invalide ou mal formaté.")
+                st.error("Numéro invalide.")
         except Exception as e:
-            st.error(f"Erreur d'analyse : Assure-toi d'inclure l'indicatif du pays (ex: +213...). Détail : {e}")
-
-# --- MODULE 4 : INTERCEPTION (MÉTADONNÉES RÉSEAU) ---
-elif menu == "Interception (Métadonnées)":
-    st.subheader("🌐 Analyse des métadonnées réseau & Flux")
-    num_intercep = st.text_input("Cible", "+213 56 25 16 68 0")
-    
-    if st.button("Capturer les paquets"):
-        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.success(f"Capture réseau pour : {num_intercep}")
-        st.info(f"🕒 **Horodatage** : {maintenant}")
-        st.write("- **Adresse IP source** : `192.168.1.55`")
-        st.write("- **Taille des paquets de données** : `520 octets (Flux chiffré)`")
-        st.write("- **Statut de session** : Actif")
-
-# --- MODULE 5 : SIMULATION SIEM ---
-elif menu == "Simulation SIEM":
-    st.subheader("📊 Simulation SIEM & Analyse de Logs")
-    if st.button("Analyser les logs"):
-        st.text("192.168.1.55 -- GET /index.php (200)")
-        st.error("🔴 ALERTE CRITIQUE : Tentative de Brute-Force détectée depuis 203.0.113.42")
+            st.error(f"Erreur : {e}")
