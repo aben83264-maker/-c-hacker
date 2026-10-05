@@ -33,10 +33,10 @@ st.success("✅ Accès autorisé !")
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
 
-# Menu de navigation
+# Menu de navigation mis avec l'option Reverse IP
 menu = st.sidebar.selectbox(
     "Navigation", 
-    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
+    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Reverse IP ➔ Numéro", "Interception sites visités", "Simulation SIEM"]
 )
 
 # --- MODULE 1 : CHIFFREMENT D'IP ---
@@ -73,7 +73,24 @@ elif menu == "OSINT Téléphone":
         st.write("- **Opérateur estimé** : Orange / France")
         st.write("- **Ligne** : Mobile active")
 
-# --- MODULE 4 : INTERCEPTION SITES VISITÉS & MÉTADONNÉES ---
+# --- NOUVEAU MODULE : REVERSE IP -> NUMÉRO ---
+elif menu == "Reverse IP ➔ Numéro":
+    st.subheader("🌐 Simulation : Corrélation IP vers Numéro")
+    ip_recherche = st.text_input("Entrez l'adresse IP à corréler", "192.168.1.55")
+    
+    if st.button("Rechercher le propriétaire / Numéro"):
+        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.success(f"Analyse de la passerelle pour l'IP : {ip_recherche}")
+        st.info(f"🕒 **Horodatage de la corrélation** : {maintenant}")
+        
+        st.warning("📍 **Résultats de l'association réseau :**")
+        st.write(f"- **Adresse IP analysée** : `{ip_recherche}`")
+        st.write("- **Fournisseur d'accès (FAI)** : SFR Mobile / Passerelle CGNAT")
+        st.write("- **Numéro de téléphone associé (Simulé)** : `+33 (0) 6 51 43 46 40`")
+        st.write("- **Localisation de la borne** : Paris, France")
+        st.write("- **Statut de l'appareil** : Connecté au réseau 5G")
+
+# --- MODULE 5 : INTERCEPTION SITES VISITÉS & MÉTADONNÉES ---
 elif menu == "Interception sites visités":
     st.subheader("🌐 Analyse des métadonnées réseau & Flux")
     num_intercep = st.text_input("Numéro ou IP cible", "+33 (0) 6 51 43 46 40")
@@ -104,7 +121,7 @@ elif menu == "Interception sites visités":
             st.write("- **Taille des paquets de données échangés** : `420 octets (Payload chiffré)`")
             st.write("- **Statut de la session** : Actif (Connexion persistante / WebSocket)")
 
-# --- MODULE 5 : SIMULATION SIEM ---
+# --- MODULE 6 : SIMULATION SIEM ---
 elif menu == "Simulation SIEM":
     st.subheader("📊 Simulation SIEM & Analyse de Logs")
     
