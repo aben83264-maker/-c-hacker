@@ -8,7 +8,7 @@ st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️"
 # --- SYSTÈME D'AUTHENTIFICATION UNIQUE ---
 st.title("🔐 Accès Restreint - Security Checker")
 
-# Mot de passe administrateur sécurisé (entre guillemets)
+# Mot de passe administrateur sécurisé
 MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
 
 def check_password():
@@ -20,21 +20,20 @@ def check_password():
     elif password_input != "":
         st.error("❌ Mot de passe incorrect.")
 
-# Vérification de l'état de connexion
 if "password_correct" not in st.session_state:
     st.session_state["password_correct"] = False
 
 if not st.session_state["password_correct"]:
     check_password()
-    st.stop() # Bloque l'accès au reste si non connecté
+    st.stop()
 
-# --- LE RESTE DE L'APPLICATION (ACCESSIBLE UNIQUEMENT SI CONNECTÉ) ---
+# --- LE RESTE DE L'APPLICATION ---
 st.success("✅ Accès autorisé !")
 
-st.title("🛡️️ Security Checker (X-Hacker)")
+st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
 
-# Menu de navigation dans la barre latérale
+# Menu de navigation
 menu = st.sidebar.selectbox(
     "Navigation", 
     ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
@@ -74,28 +73,46 @@ elif menu == "OSINT Téléphone":
         st.write("- **Opérateur estimé** : Orange / France")
         st.write("- **Ligne** : Mobile active")
 
-# --- MODULE 4 : INTERCEPTION SITES VISITÉS ---
+# --- MODULE 4 : INTERCEPTION SITES VISITÉS & DÉTAILS AVANCÉS ---
 elif menu == "Interception sites visités":
-    st.subheader("🌐 Interception des flux et actions (Simulation)")
-    num_intercep = st.text_input("Numéro de téléphone cible", "+33 (0) 6 51 43 46 40")
+    st.subheader("🌐 Traçage des flux, Horodatage & Position")
+    num_intercep = st.text_input("Numéro ou Identifiant cible", "+33 (0) 6 51 43 46 40")
     
-    if st.button("Analyser les actions sur les sites"):
-        st.success(f"Analyse des flux Web pour : {num_intercep}")
-        st.markdown("### 🔍 Activité détaillée :")
+    if st.button("Lancer le traçage complet"):
+        # Récupération de la date et l'heure actuelles
+        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        with st.expander("🔗 Google.com (Recherche web)"):
-            st.write("- **Requête saisie** : *« tutoriel cybersécurité python »*")
-            st.write("- **Heure** : 17:42:10")
-            st.write("- **Pages lues** : 3 résultats ouverts")
+        st.success(f"Rapport de traçage généré pour : {num_intercep}")
+        st.info(f"🕒 **Horodatage de la requête** : {maintenant}")
+        
+        # Simulation de position GPS / CellID
+        st.warning("📍 **Dernière position détectée (GPS / CellID)** :")
+        st.write("- **Latitude / Longitude** : `48.8566° N, 2.3522° E`")
+        st.write("- **Zone estimée** : Paris, Île-de-France (Précision : ~15 mètres)")
+        st.write("- **Point d'accès réseau** : Relay-Cell-FR-7501")
+        
+        st.markdown("### 🔍 Historique détaillé des sites et actions :")
+        
+        # Site 1
+        with st.expander("🔗 1. Google.com (Moteur de recherche)"):
+            st.write(f"- **Heure exacte** : {maintenant}")
+            st.write("- **Action précise** : Saisie de recherche de mots-clés")
+            st.write("- **Détail de la recherche** : *« comment sécuriser un script python »*")
+            st.write("- **Durée de navigation** : 2 minutes 45 secondes")
             
-        with st.expander("🔗 Instagram.com (Réseau social)"):
-            st.write("- **Action** : Consultation de profil / Stories")
-            st.write("- **Compte ciblé** : `@hacker_sec_demo`")
-            st.write("- **Durée de session** : 4 minutes")
+        # Site 2
+        with st.expander("🔗 2. Instagram.com (Réseau Social)"):
+            st.write(f"- **Heure exacte** : {maintenant}")
+            st.write("- **Action précise** : Navigation et consultation de profils")
+            st.write("- **Détail de l'activité** : Visionnage de 4 stories, consultation de la messagerie (DM)")
+            st.write("- **Durée de navigation** : 6 minutes 12 secondes")
             
-        with st.expander("🔗 WhatsApp.com (Messagerie)"):
-            st.write("- **Activité** : Envoi de messages chiffrés")
-            st.write("- **Statut** : Connexion active au Web")
+        # Site 3
+        with st.expander("🔗 3. WhatsApp.com (Application / Web)"):
+            st.write(f"- **Heure exacte** : {maintenant}")
+            st.write("- **Action précise** : Échange de flux chiffrés")
+            st.write("- **Détail de l'activité** : Réception de 3 messages texte, envoi d'une pièce jointe")
+            st.write("- **Statut de la session** : Actif")
 
 # --- MODULE 5 : SIMULATION SIEM ---
 elif menu == "Simulation SIEM":
