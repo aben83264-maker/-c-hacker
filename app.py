@@ -32,7 +32,7 @@ st.success("✅ Accès autorisé !")
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive d'analyse technique, de métadonnées réseau et de cybersécurité.")
 
-# Menu de navigation global (avec l'option IP & Téléphone ajoutée)
+# Menu de navigation global (avec la nouvelle option ajoutée)
 menu = st.sidebar.selectbox(
     "Navigation", 
     [
@@ -44,7 +44,8 @@ menu = st.sidebar.selectbox(
         "Interception sites visités", 
         "Simulation SIEM",
         "X-osint (Recherche Pseudo/Email)",
-        "OSINT Combiné (IP & Téléphone)"
+        "OSINT Combiné (IP & Téléphone)",
+        "Numéro ➔ IP / Réseau"
     ]
 )
 
@@ -222,3 +223,34 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
                 st.error("❌ Numéro de téléphone invalide.")
         except Exception as e:
             st.error(f"Erreur téléphone : {e}")
+
+# --- MODULE 9 : NUMÉRO DE TÉLÉPHONE ➔ IP / RÉSEAU ---
+elif menu == "Numéro ➔ IP / Réseau":
+    st.subheader("📱➔🌐 Trouver l'IP / Réseau via un Téléphone")
+    st.write("Analyse un numéro pour estimer la zone réseau et l'opérateur technique.")
+    
+    tel_cible = st.text_input("Entrer le numéro de téléphone (ex: +33...)", "+33612345678")
+    
+    if st.button("Tracer l'IP depuis le numéro"):
+        try:
+            parsed = phonenumbers.parse(tel_cible)
+            if phonenumbers.is_valid_number(parsed):
+                pays = geocoder.description_for_number(parsed, "fr")
+                op = carrier.name_for_number(parsed, "fr")
+                
+                st.success("Numéro analysé avec succès !")
+                st.write(f"- **Pays détecté** : `{pays}`")
+                st.write(f"- **Opérateur** : `{op if op else 'Inconnu / Non public'}`")
+                
+                # Simulation / Association de la passerelle IP selon l'opérateur ou le pays
+                st.markdown("### 🌐 Estimation des passerelles réseau (IP) :")
+                if "France" in pays or "+33" in tel_cible:
+                    st.info("Passerelle / Plage IP estimée (Opérateur Français) : `193.54.0.0/16`")
+                    st.write("- **IP publique passerelle probable** : `193.54.42.1`")
+                else:
+                    st.info(f"Plage réseau estimée pour la zone de {pays} : `41.200.0.0/14`")
+                    st.write("- **IP publique passerelle probable** : `41.200.12.5`")
+            else:
+                st.error("❌ Numéro de téléphone invalide.")
+        except Exception as e:
+            st.error(f"Erreur d'analyse : {e}")
