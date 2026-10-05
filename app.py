@@ -66,3 +66,27 @@ elif menu == "Simulation SIEM":
         st.text("192.168.1.55 -- GET /index.php (200)")
         st.text("203.0.113.42 -- POST /login.php (401)")
         st.error("🔴 ALERTE CRITIQUE : Tentative de Brute-Force détectée depuis 203.0.113.42")
+# --- MODULE 4 : INTERCEPTION SITES VISITÉS & ACTIONS ---
+elif menu == "Interception sites visités":
+    st.subheader("🌐 Interception des flux et actions (Simulation)")
+    num_intercep = st.text_input("Numéro de téléphone cible", "+33 (0) 6 51 43 46 40")
+    
+    if st.button("Analyser les actions sur les sites"):
+        st.success(f"Analyse des flux Web pour : {num_intercep}")
+        
+        # Détails des actions par site visité
+        st.markdown("### 🔍 Activité détaillée :")
+        
+        with st.expander("🔗 Google.com (Recherche web)"):
+            st.write("- **Requête saisie** : *« tutoriel cybersécurité python »*")
+            st.write("- **Heure** : 17:42:10")
+            st.write("- **Pages lues** : 3 résultats ouverts")
+            
+        with st.expander("🔗 Instagram.com (Réseau social)"):
+            st.write("- **Action** : Consultation de profil / Stories")
+            st.write("- **Compte ciblé** : `@hacker_sec_demo`")
+            st.write("- **Durée de session** : 4 minutes")
+            
+        with st.expander("🔗 WhatsApp.com (Messagerie)"):
+            st.write("- **Activité** : Envoi de messages chiffrés")
+            st.write("- **Statut** : Connexion active au Web")
