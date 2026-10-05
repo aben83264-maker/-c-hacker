@@ -32,7 +32,7 @@ st.success("✅ Accès autorisé !")
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive d'analyse technique, de métadonnées réseau et de cybersécurité.")
 
-# Menu de navigation global (avec l'option X-osint ajoutée)
+# Menu de navigation global (avec l'option IP & Téléphone ajoutée)
 menu = st.sidebar.selectbox(
     "Navigation", 
     [
@@ -43,7 +43,8 @@ menu = st.sidebar.selectbox(
         "Scan de Ports Réel", 
         "Interception sites visités", 
         "Simulation SIEM",
-        "X-osint (Recherche Pseudo/Email)"
+        "X-osint (Recherche Pseudo/Email)",
+        "OSINT Combiné (IP & Téléphone)"
     ]
 )
 
@@ -151,7 +152,7 @@ elif menu == "Interception sites visités":
     num_intercep = st.text_input("Cible ou Identifiant", "+33 (0) 6 51 43 46 40")
     
     if st.button("Capturer les paquets et métadonnées"):
-        maintenant = datetime.datetime.now().strftime("%Y-%m-d %H:%M:%S")
+        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         st.success(f"Capture réseau réussie pour la cible : {num_intercep}")
         st.info(f"🕒 **Horodatage de la connexion** : {maintenant}")
@@ -184,3 +185,40 @@ elif menu == "X-osint (Recherche Pseudo/Email)":
             st.write("- **Instagram** : Non répertorié 🔴")
             st.write("- **TikTok** : Non répertorié 🔴")
             st.success("Investigation X-osint terminée avec succès !")
+
+# --- MODULE 8 : OSINT COMBINÉ (IP & TÉLÉPHONE) ---
+elif menu == "OSINT Combiné (IP & Téléphone)":
+    st.subheader("🔗 Corrélation IP & Téléphone")
+    st.write("Analysez simultanément une adresse IP et un numéro de téléphone.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        ip_input = st.text_input("Adresse IP cible", "8.8.8.8")
+    with col2:
+        tel_input = st.text_input("Numéro de téléphone", "+33612345678")
+        
+    if st.button("Lancer l'analyse croisée"):
+        st.info("Traitement des requêtes en cours...")
+        
+        # Analyse IP
+        try:
+            url = f"http://ip-api.com/json/{ip_input}"
+            reponse = requests.get(url, timeout=5).json()
+            if reponse.get("status") == "success":
+                st.success(f"🌐 **IP localisée** : {reponse.get('city')}, {reponse.get('country')} (FAI: {reponse.get('isp')})")
+            else:
+                st.error("❌ IP invalide ou non localisable.")
+        except Exception as e:
+            st.error(f"Erreur lors de la requête IP : {e}")
+            
+        # Analyse Téléphone
+        try:
+            parsed = phonenumbers.parse(tel_input)
+            if phonenumbers.is_valid_number(parsed):
+                pays = geocoder.description_for_number(parsed, "fr")
+                op = carrier.name_for_number(parsed, "fr")
+                st.success(f"📱 **Téléphone valide** : Pays: {pays} | Opérateur: {op}")
+            else:
+                st.error("❌ Numéro de téléphone invalide.")
+        except Exception as e:
+            st.error(f"Erreur téléphone : {e}")
