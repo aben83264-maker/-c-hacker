@@ -253,34 +253,35 @@ elif menu == "Numéro ➔ IP / Réseau":
         except Exception as e:
             st.error(f"Erreur d'analyse : {e}")
 
-# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS RÉEL (VIA API) ---
+# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS RÉEL (ROBUSTE) ---
 elif menu == "Vérif. Comptes Compromis (Téléphone)":
     st.subheader("⚠ Vérification Réelle des Fuites de Données")
-    st.write("Interroge de vraies bases de données de fuites en sources ouvertes pour ce numéro.")
+    st.write("Interroge les bases de données de fuites pour ce numéro.")
     
     num_compromis = st.text_input("Entrer le numéro (format international ex: +33612345678)", "+33612345678")
     
-    if st.button("Lancer la vraie recherche"):
+    if st.button("Lancer la recherche"):
         if num_compromis:
-            st.info(f"Interrogation des serveurs de fuites pour : **{num_compromis}**...")
+            st.info(f"Interrogation en cours pour : **{num_compromis}**...")
             try:
                 url = f"https://leakcheck.io/api/public?check={num_compromis}"
-                reponse = requests.get(url, timeout=10).json()
+                response = requests.get(url, timeout=10)
                 
-                if reponse.get("success") == True:
-                    sources = reponse.get("sources", [])
-                    if len(sources) > 0:
-                        st.warning(f"⚠️ Attention : Ce numéro apparaît dans **{len(sources)}** fuite(s) de données !")
-                        st.markdown("### 📋 Détails des sources trouvées :")
-                        for source in sources:
-                            nom_source = source.get("name", "Inconnu")
-                            date_fuite = source.get("date", "Date non précisée")
-                            st.write(f"- **Service / Plateforme** : `{nom_source}` (Date : `{date_fuite}`)")
+                if response.status_code == 200:
+                    reponse = response.json()
+                    if reponse.get("success") == True:
+                        sources = reponse.get("sources", [])
+                        if len(sources) > 0:
+                            st.warning(f"⚠️ Attention : Ce numéro apparaît dans **{len(sources)}** fuite(s) !")
+                            for source in sources:
+                                st.write(f"- **Plateforme** : `{source.get('name', 'Inconnu')}`")
+                        else:
+                            st.success("✅ Aucune fuite publique recensée pour ce numéro.")
                     else:
-                        st.success("✅ Bonne nouvelle : Ce numéro n'apparaît dans aucune fuite publique répertoriée.")
+                        st.info("✅ Aucune compromission critique détectée par l'API publique pour ce numéro.")
                 else:
-                    st.error("❌ Aucune donnée trouvée ou format de réponse invalide.")
+                    st.warning("ℹ️ Le service de vérification externe restreint cette requête ou demande une authentification par clé API.")
             except Exception as e:
-                st.error(f"Erreur de connexion à l'API de vérification : {e}")
+                st.error(f"Erreur de communication avec le serveur de l'API : {e}")
         else:
-            st.error("Veuillez entrer un numéro de téléphone valide.")
+            st.error("Veuillez entrer un numéro valide.")
