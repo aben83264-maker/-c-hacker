@@ -1,4 +1,45 @@
 import streamlit as st
+
+# Configuration de la page
+st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
+
+# --- SYSTÈME D'AUTHENTIFICATION UNIQUE ---
+st.title("🔐 Accès Restreint - Security Checker")
+
+# Définis ton mot de passe secret ici
+MOT_DE_PASSE_ADMIN = "MonMotDePasseSecret123"
+
+def check_password():
+    """Vérifie si le mot de passe entré est correct."""
+    password_input = st.text_input("Entrez le mot de passe administrateur", type="password")
+    if password_input == MOT_DE_PASSE_ADMIN:
+        st.session_state["password_correct"] = True
+    elif password_input != "":
+        st.error("❌ Mot de passe incorrect.")
+
+# Vérification de l'état de connexion
+if "password_correct" not in st.session_state:
+    st.session_state["password_correct"] = False
+
+if not st.session_state["password_correct"]:
+    check_password()
+    st.stop() # Arrête l'exécution du reste de l'application si non connecté
+
+# --- LE RESTE DE TON APPLICATION (VISIBLE UNIQUEMENT SI CONNECTÉ) ---
+st.success("✅ Accès autorisé !")
+
+st.title("🛡️ Security Checker (X-Hacker)")
+st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
+
+# Menu de navigation dans la barre latérale
+menu = st.sidebar.selectbox(
+    "Navigation", 
+    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
+)
+
+# ... (mets ici la suite de tes modules)
+
+import streamlit as st
 import datetime
 import random
 
