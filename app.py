@@ -6,7 +6,7 @@ import phonenumbers
 from phonenumbers import geocoder, carrier, number_type
 
 # Configuration de la page
-st.set_page_config(page_title="Security Checker (Réel)", page_icon="🛡️")
+st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
 
 # --- SYSTÈME D'AUTHENTIFICATION ---
 st.title("🔐 Accès Restreint - Security Checker")
@@ -27,69 +27,53 @@ if not st.session_state["password_correct"]:
     check_password()
     st.stop()
 
+# --- APPLICATION PRINCIPALE ---
 st.success("✅ Accès autorisé !")
-st.title("🛡️ Security Checker — Outils Réels")
-st.write("Plateforme d'analyse technique et de cyber-sécurité (Données réelles et autorisées).")
+st.title("🛡️ Security Checker (X-Hacker)")
+st.write("Plateforme interactive d'analyse technique, de métadonnées réseau et de cybersécurité.")
 
-# Menu de navigation
+# Menu de navigation global
 menu = st.sidebar.selectbox(
     "Navigation", 
-    ["Géolocalisation IP Réelle", "Scan de Ports Réel", "OSINT Téléphone (Réel)"]
+    [
+        "Chiffrement IP", 
+        "Simulation Nmap", 
+        "OSINT Téléphone (Réel)", 
+        "Géolocalisation IP Réelle", 
+        "Scan de Ports Réel", 
+        "Interception sites visités", 
+        "Simulation SIEM"
+    ]
 )
 
-# --- MODULE 1 : VRAIE GÉOLOCALISATION D'UNE IP ---
-if menu == "Géolocalisation IP Réelle":
-    st.subheader("🌍 Vraie Localisation d'une Adresse IP (Publique)")
-    st.write("Interroge les bases de données mondiales pour obtenir les informations d'une adresse IP publique.")
+# --- MODULE 1 : CHIFFREMENT D'IP ---
+if menu == "Chiffrement IP":
+    st.subheader("📁 Créer & Chiffrer un rapport X-Hacker")
+    ip_cible = st.text_input("IP cible à simuler", "192.168.1.10")
+    cle_secrete = st.text_input("Clé secrète de chiffrement", type="password")
     
-    ip_saisie = st.text_input("Entrez une adresse IP publique (ex: 8.8.8.8 ou 1.1.1.1)", "8.8.8.8")
+    if st.button("Générer et Chiffrer"):
+        st.success(f"Rapport généré pour la cible {ip_cible} et chiffré avec succès !")
+        st.code("XLFYfy7...[données_chiffrées_aes256]...329A", language="text")
+
+# --- MODULE 2 : SIMULATION NMAP ---
+elif menu == "Simulation Nmap":
+    st.subheader("🔍 Simulation Nmap")
+    ip_nmap = st.text_input("IP ou domaine cible", "192.168.1.1")
     
-    if st.button("Interroger la base mondiale"):
-        try:
-            url = f"http://ip-api.com/json/{ip_saisie}"
-            reponse = requests.get(url, timeout=5).json()
-            
-            if reponse.get("status") == "success":
-                st.success("Données récupérées avec succès !")
-                st.write(f"- **Pays** : {reponse.get('country')} ({reponse.get('countryCode')})")
-                st.write(f"- **Région / Ville** : {reponse.get('regionName')} - {reponse.get('city')}")
-                st.write(f"- **Fournisseur d'accès (FAI / ISP)** : {reponse.get('isp')}")
-                st.write(f"- **Organisation** : {reponse.get('org')}")
-                st.write(f"- **Coordonnées GPS approximatives** : Lat: {reponse.get('lat')}, Lon: {reponse.get('lon')}")
-            else:
-                st.error("❌ Impossible de géolocaliser cette IP (IP privée ou invalide).")
-        except Exception as e:
-            st.error(f"Erreur de connexion à l'API : {e}")
+    if st.button("Lancer le balayage"):
+        st.write("Port 21/tcp : **FERMÉ**")
+        st.info("Port 22/tcp : **OUVERT** — Service: SSH (Risque: 4.0/10)")
+        st.write("Port 23/tcp : **FERMÉ**")
+        st.write("Port 53/tcp : **FERMÉ**")
+        st.info("Port 80/tcp : **OUVERT** — Service: HTTP (Risque: 5.0/10)")
+        st.info("Port 443/tcp : **OUVERT** — Service: HTTPS (Risque: 1.0/10)")
+        st.write("Port 8080/tcp : **FERMÉ**")
 
-# --- MODULE 2 : VRAI SCAN DE PORTS (TCP SOCKET) ---
-elif menu == "Scan de Ports Réel":
-    st.subheader("🔍 Vrai Scan de Ports (TCP)")
-    st.write("Teste si des services spécifiques répondent réellement sur une cible autorisée.")
-    
-    ip_cible = st.text_input("Adresse IP ou Domaine cible (ex: scanme.nmap.org)", "scanme.nmap.org")
-    ports_a_tester = [21, 22, 80, 443, 8080]
-
-    if st.button("Lancer le vrai scan TCP"):
-        st.write(f"Analyse des ports sur **{ip_cible}** en cours...")
-        
-        for port in ports_a_tester:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(1.5)
-                resultat = s.connect_ex((ip_cible, port))
-                s.close()
-                
-                if resultat == 0:
-                    st.success(f"Port {port}/tcp : **OUVERT** 🟢")
-                else:
-                    st.write(f"Port {port}/tcp : Fermé / Filtré 🔴")
-            except Exception as e:
-                st.error(f"Erreur sur le port {port} : {e}")
-
-# --- MODULE 3 : OSINT TÉLÉPHONE RÉEL ---
+# --- MODULE 3 : OSINT TÉLÉPHONE (RÉEL) ---
 elif menu == "OSINT Téléphone (Réel)":
     st.subheader("📱 Analyse OSINT Réelle d'un Numéro")
-    st.write("Analyse l'indicatif international pour extraire les vraies métadonnées de la ligne.")
+    st.write("Analyse l'indicatif international pour extraire les métadonnées techniques de la ligne.")
     
     numero_input = st.text_input("Numéro au format international (ex: +33612345678 ou +213...)", "+33612345678")
     
@@ -116,3 +100,65 @@ elif menu == "OSINT Téléphone (Réel)":
                 st.error("❌ Ce numéro est invalide ou mal formaté.")
         except Exception as e:
             st.error(f"Erreur d'analyse : Assure-toi d'inclure l'indicatif (ex: +33...). Détail : {e}")
+
+# --- MODULE 4 : GÉOLOCALISATION IP RÉELLE ---
+elif menu == "Géolocalisation IP Réelle":
+    st.subheader("🌍 Vraie Localisation d'une Adresse IP (Publique)")
+    ip_saisie = st.text_input("Entrez une adresse IP publique (ex: 8.8.8.8)", "8.8.8.8")
+    
+    if st.button("Interroger la base mondiale"):
+        try:
+            url = f"http://ip-api.com/json/{ip_saisie}"
+            reponse = requests.get(url, timeout=5).json()
+            
+            if reponse.get("status") == "success":
+                st.success("Données récupérées avec succès !")
+                st.write(f"- **Pays** : {reponse.get('country')} ({reponse.get('countryCode')})")
+                st.write(f"- **Région / Ville** : {reponse.get('regionName')} - {reponse.get('city')}")
+                st.write(f"- **Fournisseur d'accès (FAI)** : {reponse.get('isp')}")
+                st.write(f"- **Coordonnées GPS approximatives** : Lat: {reponse.get('lat')}, Lon: {reponse.get('lon')}")
+            else:
+                st.error("❌ Impossible de géolocaliser cette IP (IP privée ou invalide).")
+        except Exception as e:
+            st.error(f"Erreur de connexion à l'API : {e}")
+
+# --- MODULE 5 : SCAN DE PORTS RÉEL ---
+elif menu == "Scan de Ports Réel":
+    st.subheader("🔍 Vrai Scan de Ports (TCP)")
+    ip_cible = st.text_input("Adresse IP ou Domaine cible", "scanme.nmap.org")
+    ports_a_tester = [21, 22, 80, 443, 8080]
+
+    if st.button("Lancer le vrai scan TCP"):
+        st.write(f"Analyse des ports sur **{ip_cible}** en cours...")
+        for port in ports_a_tester:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.5)
+                resultat = s.connect_ex((ip_cible, port))
+                s.close()
+                
+                if resultat == 0:
+                    st.success(f"Port {port}/tcp : **OUVERT** 🟢")
+                else:
+                    st.write(f"Port {port}/tcp : Fermé / Filtré 🔴")
+            except Exception as e:
+                st.error(f"Erreur sur le port {port} : {e}")
+
+# --- MODULE 6 : INTERCEPTION SITES VISITÉS & MÉTADONNÉES ---
+elif menu == "Interception sites visités":
+    st.subheader("🌐 Analyse des métadonnées réseau & Flux")
+    num_intercep = st.text_input("Cible ou Identifiant", "+33 (0) 6 51 43 46 40")
+    
+    if st.button("Capturer les paquets et métadonnées"):
+        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        st.success(f"Capture réseau réussie pour la cible : {num_intercep}")
+        st.info(f"🕒 **Horodatage de la connexion** : {maintenant}")
+        
+        st.markdown("### 📊 Métadonnées des flux actifs :")
+        
+        with st.expander("🔗 1. Google.com (HTTPS / 443)"):
+            st.write("- **Adresse IP source/destination** : `192.168.1.55` ➔ `142.250.190.46`")
+            st.write(f"- **Horodatage précis** : {maintenant}")
+            st.write("- **Taille des paquets échangés** : `1.2 Ko (Requête) / 14.5 Ko (Réponse)`")
+            st.write("- **Statut de la session** : Actif (TLS 1.3)")
