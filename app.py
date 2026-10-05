@@ -1,6 +1,8 @@
 import streamlit as st
 import datetime
 import random
+import phonenumbers
+from phonenumbers import geocoder, carrier, number_type
 
 # Configuration de la page
 st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
@@ -8,11 +10,9 @@ st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️"
 # --- SYSTÈME D'AUTHENTIFICATION UNIQUE ---
 st.title("🔐 Accès Restreint - Security Checker")
 
-# Mot de passe administrateur sécurisé
 MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
 
 def check_password():
-    """Vérifie si le mot de passe entré est correct."""
     password_input = st.text_input("Entrez le mot de passe administrateur", type="password")
     if password_input == MOT_DE_PASSE_ADMIN:
         st.session_state["password_correct"] = True
@@ -27,21 +27,19 @@ if not st.session_state["password_correct"]:
     check_password()
     st.stop()
 
-# --- LE RESTE DE L'APPLICATION ---
 st.success("✅ Accès autorisé !")
 
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
 
-# Menu de navigation mis avec l'option Reverse IP
 menu = st.sidebar.selectbox(
     "Navigation", 
-    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Reverse IP ➔ Numéro", "Interception sites visités", "Simulation SIEM"]
+    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone (Réel)", "Interception (Métadonnées)", "Simulation SIEM"]
 )
 
 # --- MODULE 1 : CHIFFREMENT D'IP ---
 if menu == "Chiffrement IP":
-    st.subheader("📁 Créer & Chiffrer un rapport X-Hacker")
+    st.subheader("📁 Créer & Chiffrer un rapport")
     ip_cible = st.text_input("IP cible à simuler", "192.168.1.10")
     cle_secrete = st.text_input("Clé secrète de chiffrement", type="password")
     
@@ -56,76 +54,62 @@ elif menu == "Simulation Nmap":
     
     if st.button("Lancer le balayage"):
         st.write("Port 21/tcp : **FERMÉ**")
-        st.info("Port 22/tcp : **OUVERT** — Service: SSH (Risque: 4.0/10)")
-        st.write("Port 23/tcp : **FERMÉ**")
-        st.write("Port 53/tcp : **FERMÉ**")
-        st.info("Port 80/tcp : **OUVERT** — Service: HTTP (Risque: 5.0/10)")
-        st.info("Port 443/tcp : **OUVERT** — Service: HTTPS (Risque: 1.0/10)")
-        st.write("Port 8080/tcp : **FERMÉ**")
+        st.info("Port 22/tcp : **OUVERT** — Service: SSH")
+        st.write("Port 80/tcp : **OUVERT** — Service: HTTP")
+        st.info("Port 443/tcp : **OUVERT** — Service: HTTPS")
 
-# --- MODULE 3 : OSINT TÉLÉPHONE ---
-elif menu == "OSINT Téléphone":
-    st.subheader("📱 OSINT / Traque de numéro")
-    numero = st.text_input("Numéro de téléphone cible", "+33651434640")
+# --- MODULE 3 : OSINT TÉLÉPHONE (VRAIE ANALYSE TECHNIQUE) ---
+elif menu == "OSINT Téléphone (Réel)":
+    st.subheader("📱 Analyse OSINT Réelle d'un Numéro")
+    st.write("Entre un numéro au format international (ex: `+213562516680` ou `+33612345678`)")
+    numero_input = st.text_input("Numéro de téléphone cible", "+213562516680")
     
-    if st.button("Analyser le numéro"):
-        st.success(f"Analyse réussie pour le numéro : {numero}")
-        st.write("- **Opérateur estimé** : Orange / France")
-        st.write("- **Ligne** : Mobile active")
+    if st.button("Lancer l'analyse réelle"):
+        try:
+            # Analyse réelle du numéro via la bibliothèque phonenumbers
+            parsed_number = phonenumbers.parse(numero_input)
+            
+            if phonenumbers.is_valid_number(parsed_number):
+                pays_reel = geocoder.description_for_number(parsed_number, "fr")
+                operateur_reel = carrier.name_for_number(parsed_number, "fr")
+                type_ligne = number_type(parsed_number)
+                
+                # Traduction du type de ligne
+                types_dict = {
+                    phonenumbers.PhoneNumberType.MOBILE: "Téléphone Mobile",
+                    phonenumbers.PhoneNumberType.FIXED_LINE: "Ligne Fixe",
+                    phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile",
+                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)"
+                }
+                libelle_type = types_dict.get(type_ligne, "Inconnu / Autre")
+                
+                st.success(f"Analyse réussie pour le numéro : {numero_input}")
+                st.markdown("### 📊 Résultats techniques réels :")
+                st.write(f"- **Pays / Région d'origine** : `{pays_reel if pays_reel else 'Non spécifié'}`")
+                st.write(f"- **Opérateur réseau** : `{operateur_reel if operateur_reel else 'Opérateur non détecté (ou masqué par portabilité)'}`")
+                st.write(f"- **Type de ligne** : `{libelle_type}`")
+                st.write(f"- **Format international normalisé** : `{phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
+            else:
+                st.error("❌ Ce numéro semble invalide ou mal formaté.")
+        except Exception as e:
+            st.error(f"Erreur d'analyse : Assure-toi d'inclure l'indicatif du pays (ex: +213...). Détail : {e}")
 
-# --- NOUVEAU MODULE : REVERSE IP -> NUMÉRO ---
-elif menu == "Reverse IP ➔ Numéro":
-    st.subheader("🌐 Simulation : Corrélation IP vers Numéro")
-    ip_recherche = st.text_input("Entrez l'adresse IP à corréler", "192.168.1.55")
-    
-    if st.button("Rechercher le propriétaire / Numéro"):
-        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.success(f"Analyse de la passerelle pour l'IP : {ip_recherche}")
-        st.info(f"🕒 **Horodatage de la corrélation** : {maintenant}")
-        
-        st.warning("📍 **Résultats de l'association réseau :**")
-        st.write(f"- **Adresse IP analysée** : `{ip_recherche}`")
-        st.write("- **Fournisseur d'accès (FAI)** : SFR Mobile / Passerelle CGNAT")
-        st.write("- **Numéro de téléphone associé (Simulé)** : `+33 (0) 6 51 43 46 40`")
-        st.write("- **Localisation de la borne** : Paris, France")
-        st.write("- **Statut de l'appareil** : Connecté au réseau 5G")
-
-# --- MODULE 5 : INTERCEPTION SITES VISITÉS & MÉTADONNÉES ---
-elif menu == "Interception sites visités":
+# --- MODULE 4 : INTERCEPTION (MÉTADONNÉES RÉSEAU) ---
+elif menu == "Interception (Métadonnées)":
     st.subheader("🌐 Analyse des métadonnées réseau & Flux")
-    num_intercep = st.text_input("Numéro ou IP cible", "+33 (0) 6 51 43 46 40")
+    num_intercep = st.text_input("Cible", "+213 56 25 16 68 0")
     
-    if st.button("Capturer les paquets et métadonnées"):
+    if st.button("Capturer les paquets"):
         maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        st.success(f"Capture réseau réussie pour la cible : {num_intercep}")
-        st.info(f"🕒 **Horodatage de la connexion** : {maintenant}")
-        
-        st.markdown("### 📊 Métadonnées des flux actifs :")
-        
-        with st.expander("🔗 1. Google.com (HTTPS / 443)"):
-            st.write("- **Adresse IP source/destination** : `192.168.1.55` ➔ `142.250.190.46`")
-            st.write(f"- **Horodatage précis** : {maintenant}")
-            st.write("- **Taille des paquets échangés** : `1.2 Ko (Requête) / 14.5 Ko (Réponse)`")
-            st.write("- **Statut de la session** : Actif (TLS 1.3)")
-            
-        with st.expander("🔗 2. Instagram.com (HTTPS / 443)"):
-            st.write("- **Adresse IP source/destination** : `192.168.1.55` ➔ `157.240.199.174`")
-            st.write(f"- **Horodatage précis** : {maintenant}")
-            st.write("- **Taille des paquets échangés** : `850 octets (Requête) / 48.2 Ko (Médias/Images)`")
-            st.write("- **Statut de la session** : Actif (Keep-Alive)")
-            
-        with st.expander("🔗 3. WhatsApp.com / API (Port 5222 / 443)"):
-            st.write("- **Adresse IP source/destination** : `192.168.1.55` ➔ `157.240.197.60`")
-            st.write(f"- **Horodatage précis** : {maintenant}")
-            st.write("- **Taille des paquets de données échangés** : `420 octets (Payload chiffré)`")
-            st.write("- **Statut de la session** : Actif (Connexion persistante / WebSocket)")
+        st.success(f"Capture réseau pour : {num_intercep}")
+        st.info(f"🕒 **Horodatage** : {maintenant}")
+        st.write("- **Adresse IP source** : `192.168.1.55`")
+        st.write("- **Taille des paquets de données** : `520 octets (Flux chiffré)`")
+        st.write("- **Statut de session** : Actif")
 
-# --- MODULE 6 : SIMULATION SIEM ---
+# --- MODULE 5 : SIMULATION SIEM ---
 elif menu == "Simulation SIEM":
     st.subheader("📊 Simulation SIEM & Analyse de Logs")
-    
     if st.button("Analyser les logs"):
         st.text("192.168.1.55 -- GET /index.php (200)")
-        st.text("203.0.113.42 -- POST /login.php (401)")
         st.error("🔴 ALERTE CRITIQUE : Tentative de Brute-Force détectée depuis 203.0.113.42")
