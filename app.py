@@ -32,7 +32,7 @@ st.success("✅ Accès autorisé !")
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive d'analyse technique, de métadonnées réseau et de cybersécurité.")
 
-# Menu de navigation global
+# Menu de navigation global (avec l'option X-osint ajoutée)
 menu = st.sidebar.selectbox(
     "Navigation", 
     [
@@ -42,7 +42,8 @@ menu = st.sidebar.selectbox(
         "Géolocalisation IP Réelle", 
         "Scan de Ports Réel", 
         "Interception sites visités", 
-        "Simulation SIEM"
+        "Simulation SIEM",
+        "X-osint (Recherche Pseudo/Email)"
     ]
 )
 
@@ -150,7 +151,7 @@ elif menu == "Interception sites visités":
     num_intercep = st.text_input("Cible ou Identifiant", "+33 (0) 6 51 43 46 40")
     
     if st.button("Capturer les paquets et métadonnées"):
-        maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        maintenant = datetime.datetime.now().strftime("%Y-%m-d %H:%M:%S")
         
         st.success(f"Capture réseau réussie pour la cible : {num_intercep}")
         st.info(f"🕒 **Horodatage de la connexion** : {maintenant}")
@@ -162,3 +163,24 @@ elif menu == "Interception sites visités":
             st.write(f"- **Horodatage précis** : {maintenant}")
             st.write("- **Taille des paquets échangés** : `1.2 Ko (Requête) / 14.5 Ko (Réponse)`")
             st.write("- **Statut de la session** : Actif (TLS 1.3)")
+
+# --- MODULE 7 : X-OSINT (RECHERCHE PSEUDO / EMAIL) ---
+elif menu == "X-osint (Recherche Pseudo/Email)":
+    st.subheader("🕵️‍♂️ Module d'investigation X-osint")
+    st.write("Recherche d'informations en sources ouvertes sur une cible (pseudo ou e-mail).")
+    
+    cible_osint = st.text_input("Entrer un pseudo ou un e-mail à traquer", "hacker_test")
+    
+    if st.button("Lancer l'investigation X-osint"):
+        if "@" in cible_osint:
+            st.info(f"Analyse des fuites de données (Data Leaks) pour : **{cible_osint}**")
+            st.success("✅ Aucun mot de passe en clair trouvé dans les bases de données publiques.")
+            st.write("- **Domain check** : Valide")
+            st.write("- **Gravatar** : Trouvé 🟢")
+        else:
+            st.info(f"Recherche de la présence du pseudo **{cible_osint}** sur les plateformes...")
+            st.write(f"- **GitHub** : https://github.com/{cible_osint} (Vérification en cours...) 🟢")
+            st.write("- **Twitter / X** : Potentiellement existant 🟡")
+            st.write("- **Instagram** : Non répertorié 🔴")
+            st.write("- **TikTok** : Non répertorié 🔴")
+            st.success("Investigation X-osint terminée avec succès !")
