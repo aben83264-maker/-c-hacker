@@ -12,7 +12,7 @@ MOT_DE_PASSE_ADMIN = "MonMotDePasseSecret123"
 def check_password():
     """Vérifie si le mot de passe entré est correct."""
     password_input = st.text_input("Entrez le mot de passe administrateur", type="password")
-    if password_input == MOT_DE_PASSE_ADMIN:
+    if password_input ==ADMIN_X_123@Hanter:
         st.session_state["password_correct"] = True
     elif password_input != "":
         st.error("❌ Mot de passe incorrect.")
