@@ -3,12 +3,12 @@ import datetime
 import socket
 import requests
 import phonenumbers
-from phonenumbers import geocoder, carrier, number_type
+from phonenumbers import geocoder, carrier, number_type, timezone
 
 # Configuration de la page
 st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
 
-# --- SYSTÈME D'AUTHENTIFICATION ---
+# --- SYSTÈMES D'AUTHENTIFICATION ---
 st.title("🔐 Accès Restreint - Security Checker")
 MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
 
@@ -38,7 +38,7 @@ menu = st.sidebar.selectbox(
     [
         "Chiffrement IP", 
         "Simulation Nmap", 
-        "OSINT Téléphone (Réel)", 
+        "OSINT Téléphone (Réel & Avancé)", 
         "Géolocalisation IP Réelle", 
         "Scan de Ports Réel", 
         "Interception sites visités", 
@@ -74,32 +74,43 @@ elif menu == "Simulation Nmap":
         st.info("Port 443/tcp : **OUVERT** — Service: HTTPS (Risque: 1.0/10)")
         st.write("Port 8080/tcp : **FERMÉ**")
 
-# --- MODULE 3 : OSINT TÉLÉPHONE (RÉEL) ---
-elif menu == "OSINT Téléphone (Réel)":
-    st.subheader("📱 Analyse OSINT Réelle d'un Numéro")
-    st.write("Analyse l'indicatif international pour extraire les métadonnées techniques de la ligne.")
+# --- MODULE 3 : OSINT TÉLÉPHONE (RÉEL & AVANCÉ) ---
+elif menu == "OSINT Téléphone (Réel & Avancé)":
+    st.subheader("📱 Analyse OSINT Avancée d'un Numéro")
+    st.write("Analyse technique approfondie : opérateur, type de ligne, fuseau horaire et formats normalisés.")
     
     numero_input = st.text_input("Numéro au format international (ex: +33612345678 ou +213...)", "+33612345678")
     
-    if st.button("Analyser le numéro"):
+    if st.button("Lancer l'analyse avancée"):
         try:
             parsed = phonenumbers.parse(numero_input)
             if phonenumbers.is_valid_number(parsed):
                 pays = geocoder.description_for_number(parsed, "fr")
                 op = carrier.name_for_number(parsed, "fr")
                 type_ligne = number_type(parsed)
+                time_zones = timezone.time_zones_for_number(parsed)
                 
                 types_dict = {
                     phonenumbers.PhoneNumberType.MOBILE: "Mobile",
                     phonenumbers.PhoneNumberType.FIXED_LINE: "Fixe",
-                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)"
+                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)",
+                    phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile"
                 }
                 
-                st.success("Numéro valide analysé avec succès !")
+                st.success("Analyse du numéro réussie !")
+                st.markdown("### 📋 Informations techniques :")
                 st.write(f"- **Pays / Région** : `{pays if pays else 'Inconnu'}`")
                 st.write(f"- **Opérateur d'origine** : `{op if op else 'Non public / Porté'}`")
                 st.write(f"- **Type de ligne** : `{types_dict.get(type_ligne, 'Autre')}`")
-                st.write(f"- **Format international** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
+                
+                # Fuseau horaire
+                tz_list = ", ".join(time_zones) if time_zones else "Inconnu"
+                st.write(f"- **Fuseau(x) horaire(s)** : `{tz_list}`")
+                
+                st.markdown("### 🌐 Formats normalisés :")
+                st.write(f"- **Format E.164 (Standard mondial)** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)}`")
+                st.write(f"- **Format International** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
+                st.write(f"- **Format National** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.NATIONAL)}`")
             else:
                 st.error("❌ Ce numéro est invalide ou mal formaté.")
         except Exception as e:
