@@ -1,4 +1,6 @@
 import streamlit as st
+import datetime
+import random
 
 # Configuration de la page
 st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
@@ -6,14 +8,15 @@ st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️"
 # --- SYSTÈME D'AUTHENTIFICATION UNIQUE ---
 st.title("🔐 Accès Restreint - Security Checker")
 
-# Définis ton mot de passe secret ici
-MOT_DE_PASSE_ADMIN = "MonMotDePasseSecret123"
+# Mot de passe administrateur sécurisé (entre guillemets)
+MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
 
 def check_password():
     """Vérifie si le mot de passe entré est correct."""
     password_input = st.text_input("Entrez le mot de passe administrateur", type="password")
-    if password_input ==ADMIN_X_123@Hanter:
+    if password_input == MOT_DE_PASSE_ADMIN:
         st.session_state["password_correct"] = True
+        st.rerun()
     elif password_input != "":
         st.error("❌ Mot de passe incorrect.")
 
@@ -23,33 +26,15 @@ if "password_correct" not in st.session_state:
 
 if not st.session_state["password_correct"]:
     check_password()
-    st.stop() # Arrête l'exécution du reste de l'application si non connecté
+    st.stop() # Bloque l'accès au reste si non connecté
 
-# --- LE RESTE DE TON APPLICATION (VISIBLE UNIQUEMENT SI CONNECTÉ) ---
+# --- LE RESTE DE L'APPLICATION (ACCESSIBLE UNIQUEMENT SI CONNECTÉ) ---
 st.success("✅ Accès autorisé !")
 
-st.title("🛡️ Security Checker (X-Hacker)")
+st.title("🛡️️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
 
 # Menu de navigation dans la barre latérale
-menu = st.sidebar.selectbox(
-    "Navigation", 
-    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
-)
-
-# ... (mets ici la suite de tes modules)
-
-import streamlit as st
-import datetime
-import random
-
-# Configuration de la page
-st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
-
-st.title("🛡️ Security Checker (X-Hacker)")
-st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
-
-# Menu de navigation dans la barre latérale incluant l'interception
 menu = st.sidebar.selectbox(
     "Navigation", 
     ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
@@ -91,31 +76,11 @@ elif menu == "OSINT Téléphone":
 
 # --- MODULE 4 : INTERCEPTION SITES VISITÉS ---
 elif menu == "Interception sites visités":
-    st.subheader("🌐 Interception sites visités (Simulation)")
-    num_intercep = st.text_input("Numéro de téléphone cible", "+33 (0) 6 51 43 46 40")
-    
-    if st.button("Analyser les flux"):
-        st.write("🔗 [https://www.google.com](https://www.google.com)")
-        st.write("🔗 [https://www.instagram.com](https://www.instagram.com)")
-        st.write("🔗 [https://www.whatsapp.com](https://www.whatsapp.com)")
-
-# --- MODULE 5 : SIMULATION SIEM ---
-elif menu == "Simulation SIEM":
-    st.subheader("📊 Simulation SIEM & Analyse de Logs")
-    
-    if st.button("Analyser les logs"):
-        st.text("192.168.1.55 -- GET /index.php (200)")
-        st.text("203.0.113.42 -- POST /login.php (401)")
-        st.error("🔴 ALERTE CRITIQUE : Tentative de Brute-Force détectée depuis 203.0.113.42")
-# --- MODULE 4 : INTERCEPTION SITES VISITÉS & ACTIONS ---
-elif menu == "Interception sites visités":
     st.subheader("🌐 Interception des flux et actions (Simulation)")
     num_intercep = st.text_input("Numéro de téléphone cible", "+33 (0) 6 51 43 46 40")
     
     if st.button("Analyser les actions sur les sites"):
         st.success(f"Analyse des flux Web pour : {num_intercep}")
-        
-        # Détails des actions par site visité
         st.markdown("### 🔍 Activité détaillée :")
         
         with st.expander("🔗 Google.com (Recherche web)"):
@@ -131,3 +96,12 @@ elif menu == "Interception sites visités":
         with st.expander("🔗 WhatsApp.com (Messagerie)"):
             st.write("- **Activité** : Envoi de messages chiffrés")
             st.write("- **Statut** : Connexion active au Web")
+
+# --- MODULE 5 : SIMULATION SIEM ---
+elif menu == "Simulation SIEM":
+    st.subheader("📊 Simulation SIEM & Analyse de Logs")
+    
+    if st.button("Analyser les logs"):
+        st.text("192.168.1.55 -- GET /index.php (200)")
+        st.text("203.0.113.42 -- POST /login.php (401)")
+        st.error("🔴 ALERTE CRITIQUE : Tentative de Brute-Force détectée depuis 203.0.113.42")
