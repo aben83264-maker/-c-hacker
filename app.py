@@ -8,10 +8,10 @@ st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️"
 st.title("🛡️ Security Checker (X-Hacker)")
 st.write("Plateforme interactive de simulation de cybersécurité offensive et défensive.")
 
-# Menu de navigation dans la barre latérale
+# Menu de navigation dans la barre latérale incluant l'interception
 menu = st.sidebar.selectbox(
     "Navigation", 
-    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Simulation SIEM"]
+    ["Chiffrement IP", "Simulation Nmap", "OSINT Téléphone", "Interception sites visités", "Simulation SIEM"]
 )
 
 # --- MODULE 1 : CHIFFREMENT D'IP ---
@@ -47,10 +47,19 @@ elif menu == "OSINT Téléphone":
         st.success(f"Analyse réussie pour le numéro : {numero}")
         st.write("- **Opérateur estimé** : Orange / France")
         st.write("- **Ligne** : Mobile active")
-        st.write("- **Géolocalisation approximative** : Région Île-de-France")
 
-# --- MODULE 4 : SIMULATION SIEM ---
-elif menu == "SIEM & Analyse de Logs":
+# --- MODULE 4 : INTERCEPTION SITES VISITÉS ---
+elif menu == "Interception sites visités":
+    st.subheader("🌐 Interception sites visités (Simulation)")
+    num_intercep = st.text_input("Numéro de téléphone cible", "+33 (0) 6 51 43 46 40")
+    
+    if st.button("Analyser les flux"):
+        st.write("🔗 [https://www.google.com](https://www.google.com)")
+        st.write("🔗 [https://www.instagram.com](https://www.instagram.com)")
+        st.write("🔗 [https://www.whatsapp.com](https://www.whatsapp.com)")
+
+# --- MODULE 5 : SIMULATION SIEM ---
+elif menu == "Simulation SIEM":
     st.subheader("📊 Simulation SIEM & Analyse de Logs")
     
     if st.button("Analyser les logs"):
