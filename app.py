@@ -253,27 +253,34 @@ elif menu == "Numéro ➔ IP / Réseau":
         except Exception as e:
             st.error(f"Erreur d'analyse : {e}")
 
-# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS (TÉLÉPHONE) ---
+# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS RÉEL (VIA API) ---
 elif menu == "Vérif. Comptes Compromis (Téléphone)":
-    st.subheader("⚠️️ Vérification des Fuites de Données par Numéro")
-    st.write("Vérifie si le numéro est répertorié dans des bases de données de fuites (Data Leaks / X-osint check).")
+    st.subheader("⚠ Vérification Réelle des Fuites de Données")
+    st.write("Interroge de vraies bases de données de fuites en sources ouvertes pour ce numéro.")
     
-    num_compromis = st.text_input("Entrer le numéro à vérifier (ex: +33612345678)", "+33612345678")
+    num_compromis = st.text_input("Entrer le numéro (format international ex: +33612345678)", "+33612345678")
     
-    if st.button("Rechercher dans les leaks"):
-        try:
-            parsed = phonenumbers.parse(num_compromis)
-            if phonenumbers.is_valid_number(parsed):
-                st.info(f"Interrogation des bases de données de fuites pour le numéro : **{num_compromis}**...")
+    if st.button("Lancer la vraie recherche"):
+        if num_compromis:
+            st.info(f"Interrogation des serveurs de fuites pour : **{num_compromis}**...")
+            try:
+                url = f"https://leakcheck.io/api/public?check={num_compromis}"
+                reponse = requests.get(url, timeout=10).json()
                 
-                # Simulation d'analyse de fuite liée au numéro
-                st.warning("⚠️ **Attention :** Ce numéro apparaît dans 1 fuite de données publique répertoriée.")
-                st.markdown("### 📋 Détails de la compromission trouvée :")
-                st.write("- **Service concerné** : `Base de données e-commerce / Réseau Social (Simulée)`")
-                st.write("- **Date de la fuite** : `Novembre 2024`")
-                st.write("- **Données exposées associées** : `Numéro de téléphone, Nom d'utilisateur, Ville`")
-                st.success("Analyse de compromission terminée.")
-            else:
-                st.error("❌ Numéro de téléphone invalide ou mal formaté.")
-        except Exception as e:
-                    st.error(f"Erreur lors de la vérification : {e}")
+                if reponse.get("success") == True:
+                    sources = reponse.get("sources", [])
+                    if len(sources) > 0:
+                        st.warning(f"⚠️ Attention : Ce numéro apparaît dans **{len(sources)}** fuite(s) de données !")
+                        st.markdown("### 📋 Détails des sources trouvées :")
+                        for source in sources:
+                            nom_source = source.get("name", "Inconnu")
+                            date_fuite = source.get("date", "Date non précisée")
+                            st.write(f"- **Service / Plateforme** : `{nom_source}` (Date : `{date_fuite}`)")
+                    else:
+                        st.success("✅ Bonne nouvelle : Ce numéro n'apparaît dans aucune fuite publique répertoriée.")
+                else:
+                    st.error("❌ Aucune donnée trouvée ou format de réponse invalide.")
+            except Exception as e:
+                st.error(f"Erreur de connexion à l'API de vérification : {e}")
+        else:
+            st.error("Veuillez entrer un numéro de téléphone valide.")
