@@ -296,3 +296,80 @@ elif menu == "Vérif. Comptes Compromis (Téléphone)":
                 st.error(f"Erreur de communication avec le serveur de l'API : {e}")
         else:
             st.error("Veuillez entrer un numéro valide.")
+            import serial
+import time
+
+class GSMModule:
+    def __init__(self, port='COM3', baudrate=9600):
+        """
+        Initialise la connexion avec le module GSM.
+        Remplacez 'COM3' par votre port (ex: '/dev/ttyUSB0' sur Linux/Raspberry Pi).
+        """
+        try:
+            self.ser = serial.Serial(port, baudrate, timeout=3)
+            time.sleep(1)
+            print("Module GSM connecté avec succès.")
+        except Exception as e:
+            print(f"Erreur de connexion au module GSM : {e}")
+            self.ser = None
+
+    def envoyer_at(self, commande, attente=1):
+        """Envoie une commande AT brute au module et retourne la réponse."""
+        if self.ser and self.ser.is_open:
+            self.ser.write((commande + '\r\n').encode())
+            time.sleep(attente)
+            reponse = self.ser.read_all().decode('utf-8', errors='ignore')
+            return reponse
+        return "Port série fermé."
+
+    def envoyer_sms(self, numero, message):
+        """Envoie un SMS à un numéro donné."""
+        if not self.ser:
+            print("Module GSM non initialisé.")
+            return False
+
+        print(f"Envoi du SMS vers {numero}...")
+        
+        # Passage en mode texte
+        self.envoyer_at("AT+CMGF=1")
+        time.sleep(0.5)
+
+        # Commande pour spécifier le numéro de téléphone
+        self.ser.write(f'AT+CMGS="{numero}"\r\n'.encode())
+        time.sleep(1)
+
+        # Corps du message suivi du caractère de fin (Ctrl+Z / ASCII 26)
+        self.ser.write((message + chr(26)).encode())
+        time.sleep(3)
+
+        reponse = self.ser.read_all().decode('utf-8', errors='ignore')
+        if "OK" in reponse:
+            print("SMS envoyé avec succès !")
+            return True
+        else:
+            print(f"Échec de l'envoi du SMS. Réponse : {reponse}")
+            return False
+
+    def fermer(self):
+        """Ferme la connexion série proprement."""
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+            print("Connexion GSM fermée.")
+
+# ==========================================
+# Intégration dans votre application principale
+# ==========================================
+if __name__ == "__main__":
+    # Initialisation du module (adaptez le port selon votre système)
+    gsm = GSMModule(port='COM3', baudrate=9600)
+
+    # Exemple d'utilisation dans votre logique
+    # Par exemple, déclenché suite à une condition de votre script :
+    numero_destinataire = "+33600000000"
+    message_alerte = "Alerte : Votre application a déclenché un événement GSM."
+    
+    # gsm.envoyer_sms(numero_destinataire, message_alerte)
+
+    # Fermeture propre à la fin du script
+    gsm.fermer()
+
