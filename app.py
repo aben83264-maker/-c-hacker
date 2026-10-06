@@ -10,7 +10,7 @@ st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️"
 
 # --- SYSTÈMES D'AUTHENTIFICATION ---
 st.title("🔐 Accès Restreint - Security Checker")
-MOT_DE_PASSE_ADMIN = "ADMIN_X_123@Hanter"
+MOT_DE_PASSE_ADMIN = "ADMIN_X_678//@Hanter"
 
 def check_password():
     password_input = st.text_input("Entrez le mot de passe administrateur", type="password")
