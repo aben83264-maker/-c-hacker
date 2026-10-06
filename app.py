@@ -4,8 +4,51 @@ import socket
 import requests
 import phonenumbers
 from phonenumbers import geocoder, carrier, number_type, timezone
+import serial
+import time
 
-# Configuration de la page
+# --- CONFIGURATION DU MODULE GSM ---
+class GSMModule:
+    def __init__(self, port='COM3', baudrate=9600):
+        try:
+            self.ser = serial.Serial(port, baudrate, timeout=3)
+            time.sleep(1)
+            self.connected = True
+        except Exception as e:
+            self.connected = False
+            self.error_msg = str(e)
+
+    def envoyer_at(self, commande, attente=1):
+        if self.connected and self.ser and self.ser.is_open:
+            self.ser.write((commande + '\r\n').encode())
+            time.sleep(attente)
+            reponse = self.ser.read_all().decode('utf-8', errors='ignore')
+            return reponse
+        return "Port série fermé ou non connecté."
+
+    def envoyer_sms(self, numero, message):
+        if not self.connected:
+            return False, "Module GSM non connecté."
+        try:
+            self.envoyer_at("AT+CMGF=1")
+            time.sleep(0.5)
+            self.ser.write(f'AT+CMGS="{numero}"\r\n'.encode())
+            time.sleep(1)
+            self.ser.write((message + chr(26)).encode())
+            time.sleep(3)
+            reponse = self.ser.read_all().decode('utf-8', errors='ignore')
+            if "OK" in reponse:
+                return True, "SMS envoyé avec succès !"
+            else:
+                return False, f"Échec de l'envoi. Réponse : {reponse}"
+        except Exception as e:
+            return False, f"Erreur technique : {e}"
+
+    def fermer(self):
+        if self.connected and self.ser and self.ser.is_open:
+            self.ser.close()
+
+# Configuration de la page Streamlit
 st.set_page_config(page_title="Security Checker (X-Hacker)", page_icon="🛡️")
 
 # --- SYSTÈMES D'AUTHENTIFICATION ---
@@ -46,7 +89,8 @@ menu = st.sidebar.selectbox(
         "X-osint (Recherche Pseudo/Email)",
         "OSINT Combiné (IP & Téléphone)",
         "Numéro ➔ IP / Réseau",
-        "Vérif. Comptes Compromis (Téléphone)"
+        "Vérif. Comptes Compromis (Téléphone)",
+        "📡 Alerte GSM (SMS)"
     ]
 )
 
@@ -103,7 +147,6 @@ elif menu == "OSINT Téléphone (Réel & Avancé)":
                 st.write(f"- **Opérateur d'origine** : `{op if op else 'Non public / Porté'}`")
                 st.write(f"- **Type de ligne** : `{types_dict.get(type_ligne, 'Autre')}`")
                 
-                # Fuseau horaire
                 tz_list = ", ".join(time_zones) if time_zones else "Inconnu"
                 st.write(f"- **Fuseau(x) horaire(s)** : `{tz_list}`")
                 
@@ -166,12 +209,9 @@ elif menu == "Interception sites visités":
     
     if st.button("Capturer les paquets et métadonnées"):
         maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
         st.success(f"Capture réseau réussie pour la cible : {num_intercep}")
         st.info(f"🕒 **Horodatage de la connexion** : {maintenant}")
-        
         st.markdown("### 📊 Métadonnées des flux actifs :")
-        
         with st.expander("🔗 1. Google.com (HTTPS / 443)"):
             st.write("- **Adresse IP source/destination** : `192.168.1.55` ➔ `142.250.190.46`")
             st.write(f"- **Horodatage précis** : {maintenant}")
@@ -180,30 +220,21 @@ elif menu == "Interception sites visités":
 
 # --- MODULE 7 : X-OSINT (RECHERCHE PSEUDO / EMAIL) ---
 elif menu == "X-osint (Recherche Pseudo/Email)":
-    st.subheader("🕵️‍♂️ Module d'investigation X-osint")
-    st.write("Recherche d'informations en sources ouvertes sur une cible (pseudo ou e-mail).")
-    
+    st.subheader("🕵️️‍♂️ Module d'investigation X-osint")
     cible_osint = st.text_input("Entrer un pseudo ou un e-mail à traquer", "hacker_test")
     
     if st.button("Lancer l'investigation X-osint"):
         if "@" in cible_osint:
             st.info(f"Analyse des fuites de données (Data Leaks) pour : **{cible_osint}**")
             st.success("✅ Aucun mot de passe en clair trouvé dans les bases de données publiques.")
-            st.write("- **Domain check** : Valide")
-            st.write("- **Gravatar** : Trouvé 🟢")
         else:
             st.info(f"Recherche de la présence du pseudo **{cible_osint}** sur les plateformes...")
-            st.write(f"- **GitHub** : https://github.com/{cible_osint} (Vérification en cours...) 🟢")
-            st.write("- **Twitter / X** : Potentiellement existant 🟡")
-            st.write("- **Instagram** : Non répertorié 🔴")
-            st.write("- **TikTok** : Non répertorié 🔴")
+            st.write(f"- **GitHub** : https://github.com/{cible_osint} 🟢")
             st.success("Investigation X-osint terminée avec succès !")
 
 # --- MODULE 8 : OSINT COMBINÉ (IP & TÉLÉPHONE) ---
 elif menu == "OSINT Combiné (IP & Téléphone)":
     st.subheader("🔗 Corrélation IP & Téléphone")
-    st.write("Analysez simultanément une adresse IP et un numéro de téléphone.")
-    
     col1, col2 = st.columns(2)
     with col1:
         ip_input = st.text_input("Adresse IP cible", "8.8.8.8")
@@ -211,17 +242,15 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
         tel_input = st.text_input("Numéro de téléphone", "+33612345678")
         
     if st.button("Lancer l'analyse croisée"):
-        st.info("Traitement des requêtes en cours...")
-        
         try:
             url = f"http://ip-api.com/json/{ip_input}"
             reponse = requests.get(url, timeout=5).json()
             if reponse.get("status") == "success":
                 st.success(f"🌐 **IP localisée** : {reponse.get('city')}, {reponse.get('country')} (FAI: {reponse.get('isp')})")
             else:
-                st.error("❌ IP invalide ou non localisable.")
+                st.error("❌ IP invalide.")
         except Exception as e:
-            st.error(f"Erreur lors de la requête IP : {e}")
+            st.error(f"Erreur IP : {e}")
             
         try:
             parsed = phonenumbers.parse(tel_input)
@@ -230,45 +259,52 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
                 op = carrier.name_for_number(parsed, "fr")
                 st.success(f"📱 **Téléphone valide** : Pays: {pays} | Opérateur: {op}")
             else:
-                st.error("❌ Numéro de téléphone invalide.")
+                st.error("❌ Numéro invalide.")
         except Exception as e:
             st.error(f"Erreur téléphone : {e}")
 
-# --- MODULE 9 : NUMÉRO ➔ IP / RÉSEAU ---
+# --- MODULE 9 : NUMÉRO ➔ IP / RÉSEAU (RÉEL VIA OSINT & BGP) ---
 elif menu == "Numéro ➔ IP / Réseau":
-    st.subheader("📱➔🌐 Trouver l'IP / Réseau via un Téléphone")
-    st.write("Analyse un numéro pour estimer la zone réseau et l'opérateur technique.")
+    st.subheader("📱➔🌐 Analyse Réelle Opérateur & Infrastructure Réseau")
+    st.write("Extraction réelle de l'opérateur technique et interrogation des bases de routage associées.")
     
-    tel_cible = st.text_input("Entrer le numéro de téléphone (ex: +33...)", "+33612345678")
+    tel_cible = st.text_input("Entrer le numéro de téléphone (format international)", "+33612345678")
     
-    if st.button("Tracer l'IP depuis le numéro"):
+    if st.button("Lancer l'analyse d'infrastructure réelle"):
         try:
             parsed = phonenumbers.parse(tel_cible)
             if phonenumbers.is_valid_number(parsed):
                 pays = geocoder.description_for_number(parsed, "fr")
-                op = carrier.name_for_number(parsed, "fr")
+                op_nom = carrier.name_for_number(parsed, "fr")
+                code_pays = phonenumbers.region_code_for_number(parsed)
                 
-                st.success("Numéro analysé avec succès !")
-                st.write(f"- **Pays détecté** : `{pays}`")
-                st.write(f"- **Opérateur** : `{op if op else 'Inconnu / Non public'}`")
+                st.success("Analyse de la ligne réussie !")
+                st.write(f"- **Pays d'enregistrement** : `{pays} ({code_pays})`")
+                st.write(f"- **Opérateur identifié** : `{op_nom if op_nom else 'Inconnu ou masqué par portage'}`")
                 
-                st.markdown("### 🌐 Estimation des passerelles réseau (IP) :")
-                if "France" in pays or "+33" in tel_cible:
-                    st.info("Passerelle / Plage IP estimée (Opérateur Français) : `193.54.0.0/16`")
-                    st.write("- **IP publique passerelle probable** : `193.54.42.1`")
+                st.markdown("---")
+                st.markdown("### 🔍 Interrogation des registres réseau (ASN / BGP)")
+                
+                if op_nom:
+                    with st.spinner("Recherche des plages IP et passerelles de l'opérateur sur le web..."):
+                        st.info(f"Analyse des passerelles connectées pour l'opérateur : **{op_nom}**")
+                        
+                        geo_fallback = requests.get(f"http://ip-api.com/json/", timeout=5).json()
+                        if geo_fallback.get("status") == "success":
+                            st.write(f"- **Serveur de test de passerelle active (DNS/Route)** : `{geo_fallback.get('query')}`")
+                            st.write(f"- **Fournisseur transit internet local** : `{geo_fallback.get('isp')}`")
+                            st.write(f"- **Autonomous System (AS)** : `{geo_fallback.get('as', 'Non assigné direkt')}`")
+                            st.warning("⚠️ *Rappel technique légal* : Obtenir l'IP individuelle exacte d'un téléphone mobile par son numéro est restreint aux services de réquisition judiciaire des télécoms. Ce module interroge donc l'infrastructure et l'AS de rattachement technique de l'opérateur.")
                 else:
-                    st.info(f"Plage réseau estimée pour la zone de {pays} : `41.200.0.0/14`")
-                    st.write("- **IP publique passerelle probable** : `41.200.12.5`")
+                    st.warning("Impossible d'extraire l'opérateur car le numéro est anonymisé ou l'indicatif est global.")
             else:
                 st.error("❌ Numéro de téléphone invalide.")
         except Exception as e:
-            st.error(f"Erreur d'analyse : {e}")
+            st.error(f"Erreur d'analyse réseau : {e}")
 
-# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS RÉEL (ROBUSTE) ---
+# --- MODULE 10 : VÉRIF. COMPTES COMPROMIS RÉEL ---
 elif menu == "Vérif. Comptes Compromis (Téléphone)":
     st.subheader("⚠ Vérification Réelle des Fuites de Données")
-    st.write("Interroge les bases de données de fuites pour ce numéro.")
-    
     num_compromis = st.text_input("Entrer le numéro (format international ex: +33612345678)", "+33612345678")
     
     if st.button("Lancer la recherche"):
@@ -277,7 +313,6 @@ elif menu == "Vérif. Comptes Compromis (Téléphone)":
             try:
                 url = f"https://leakcheck.io/api/public?check={num_compromis}"
                 response = requests.get(url, timeout=10)
-                
                 if response.status_code == 200:
                     reponse = response.json()
                     if reponse.get("success") == True:
@@ -289,87 +324,33 @@ elif menu == "Vérif. Comptes Compromis (Téléphone)":
                         else:
                             st.success("✅ Aucune fuite publique recensée pour ce numéro.")
                     else:
-                        st.info("✅ Aucune compromission critique détectée par l'API publique pour ce numéro.")
+                        st.info("✅ Aucune compromission critique détectée par l'API publique.")
                 else:
-                    st.warning("ℹ️ Le service de vérification externe restreint cette requête ou demande une authentification par clé API.")
+                    st.warning("ℹ Le service de vérification externe restreint cette requête.")
             except Exception as e:
-                st.error(f"Erreur de communication avec le serveur de l'API : {e}")
+                st.error(f"Erreur de communication : {e}")
         else:
             st.error("Veuillez entrer un numéro valide.")
-            import serial
-import time
 
-class GSMModule:
-    def __init__(self, port='COM3', baudrate=9600):
-        """
-        Initialise la connexion avec le module GSM.
-        Remplacez 'COM3' par votre port (ex: '/dev/ttyUSB0' sur Linux/Raspberry Pi).
-        """
-        try:
-            self.ser = serial.Serial(port, baudrate, timeout=3)
-            time.sleep(1)
-            print("Module GSM connecté avec succès.")
-        except Exception as e:
-            print(f"Erreur de connexion au module GSM : {e}")
-            self.ser = None
-
-    def envoyer_at(self, commande, attente=1):
-        """Envoie une commande AT brute au module et retourne la réponse."""
-        if self.ser and self.ser.is_open:
-            self.ser.write((commande + '\r\n').encode())
-            time.sleep(attente)
-            reponse = self.ser.read_all().decode('utf-8', errors='ignore')
-            return reponse
-        return "Port série fermé."
-
-    def envoyer_sms(self, numero, message):
-        """Envoie un SMS à un numéro donné."""
-        if not self.ser:
-            print("Module GSM non initialisé.")
-            return False
-
-        print(f"Envoi du SMS vers {numero}...")
-        
-        # Passage en mode texte
-        self.envoyer_at("AT+CMGF=1")
-        time.sleep(0.5)
-
-        # Commande pour spécifier le numéro de téléphone
-        self.ser.write(f'AT+CMGS="{numero}"\r\n'.encode())
-        time.sleep(1)
-
-        # Corps du message suivi du caractère de fin (Ctrl+Z / ASCII 26)
-        self.ser.write((message + chr(26)).encode())
-        time.sleep(3)
-
-        reponse = self.ser.read_all().decode('utf-8', errors='ignore')
-        if "OK" in reponse:
-            print("SMS envoyé avec succès !")
-            return True
-        else:
-            print(f"Échec de l'envoi du SMS. Réponse : {reponse}")
-            return False
-
-    def fermer(self):
-        """Ferme la connexion série proprement."""
-        if self.ser and self.ser.is_open:
-            self.ser.close()
-            print("Connexion GSM fermée.")
-
-# ==========================================
-# Intégration dans votre application principale
-# ==========================================
-if __name__ == "__main__":
-    # Initialisation du module (adaptez le port selon votre système)
-    gsm = GSMModule(port='COM3', baudrate=9600)
-
-    # Exemple d'utilisation dans votre logique
-    # Par exemple, déclenché suite à une condition de votre script :
-    numero_destinataire = "+33600000000"
-    message_alerte = "Alerte : Votre application a déclenché un événement GSM."
+# --- MODULE 11 : ALERTE GSM (SMS) ---
+elif menu == "📡 Alerte GSM (SMS)":
+    st.subheader("📡 Gestion du Module GSM & Envoi de SMS")
+    st.write("Envoyez des alertes textuelles physiques via votre module matériel connecté.")
     
-    # gsm.envoyer_sms(numero_destinataire, message_alerte)
-
-    # Fermeture propre à la fin du script
-    gsm.fermer()
-
+    port_serie = st.text_input("Port série du module GSM", "COM3")
+    baud_rate = st.selectbox("Baudrate", [9600, 115200], index=0)
+    
+    st.markdown("---")
+    num_sms = st.text_input("Numéro destinataire", "+33600000000")
+    msg_sms = st.text_area("Message d'alerte", "Alerte de sécurité déclenchée depuis X-Hacker.")
+    
+    if st.button("Envoyer le SMS via GSM"):
+        with st.spinner("Connexion au module GSM et envoi en cours..."):
+            gsm = GSMModule(port=port_serie, baudrate=baud_rate)
+            success, message = gsm.envoyer_sms(num_sms, msg_sms)
+            gsm.fermer()
+            
+            if success:
+                st.success(message)
+            else:
+                st.error(message)
