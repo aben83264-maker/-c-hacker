@@ -4,12 +4,21 @@ import socket
 import requests
 import phonenumbers
 from phonenumbers import geocoder, carrier, number_type, timezone
-import serial
 import time
 
-# --- CONFIGURATION DU MODULE GSM ---
+# --- GESTION SÉCURISÉE DU MODULE GSM (Évite les plantages sur le Cloud) ---
+try:
+    import serial
+    GSM_AVAILABLE = True
+except ImportError:
+    GSM_AVAILABLE = False
+
 class GSMModule:
     def __init__(self, port='COM3', baudrate=9600):
+        self.connected = False
+        if not GSM_AVAILABLE:
+            self.error_msg = "La bibliothèque 'pyserial' n'est pas installée."
+            return
         try:
             self.ser = serial.Serial(port, baudrate, timeout=3)
             time.sleep(1)
@@ -28,7 +37,7 @@ class GSMModule:
 
     def envoyer_sms(self, numero, message):
         if not self.connected:
-            return False, "Module GSM non connecté."
+            return False, f"Module GSM non connecté. Erreur : {getattr(self, 'error_msg', 'Matériel absent')}"
         try:
             self.envoyer_at("AT+CMGF=1")
             time.sleep(0.5)
@@ -220,7 +229,7 @@ elif menu == "Interception sites visités":
 
 # --- MODULE 7 : X-OSINT (RECHERCHE PSEUDO / EMAIL) ---
 elif menu == "X-osint (Recherche Pseudo/Email)":
-    st.subheader("🕵️️‍♂️ Module d'investigation X-osint")
+    st.subheader("🕵️‍♂️ Module d'investigation X-osint")
     cible_osint = st.text_input("Entrer un pseudo ou un e-mail à traquer", "hacker_test")
     
     if st.button("Lancer l'investigation X-osint"):
