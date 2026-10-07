@@ -132,7 +132,6 @@ elif menu == "Vrai Scan Nmap":
     if st.button("Lancer le vrai scan Nmap"):
         if not NMAP_AVAILABLE:
             st.warning("⚠️ La bibliothèque Python `python-nmap` n'est pas installée. Basculement sur un scan de ports TCP natif sécurisé :")
-            # Fallback natif par socket si python-nmap n'est pas dispo
             ports_liste = [21, 22, 80, 443, 8080]
             for p in ports_liste:
                 try:
