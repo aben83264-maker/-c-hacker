@@ -6,7 +6,7 @@ import phonenumbers
 from phonenumbers import geocoder, carrier, number_type, timezone
 import time
 
-# --- GESTION SÉCURISÉE DES MODULES EXTERNES (Nmap & Serial) ---
+# --- GESTION SÉCURISÉE DES MODULES EXTERNES (Cloud & Local) ---
 try:
     import nmap
     NMAP_AVAILABLE = True
@@ -44,7 +44,7 @@ class GSMModule:
 
     def envoyer_sms(self, numero, message):
         if not self.connected:
-            return False, f"Module GSM non connecté. Erreur : {getattr(self, 'error_msg', 'Matériel absent')}"
+            return False, f"Module GSM non connecté (Environnement Cloud distant). Erreur : {getattr(self, 'error_msg', 'Matériel absent')}"
         try:
             self.envoyer_at("AT+CMGF=1")
             time.sleep(0.5)
@@ -97,13 +97,13 @@ menu = st.sidebar.selectbox(
     "Navigation", 
     [
         "Chiffrement IP", 
-        "Vrai Scan Nmap", 
+        "Vrai Scan Réseau (Cloud)", 
         "OSINT Téléphone (Réel & Avancé)", 
         "Géolocalisation IP Réelle", 
         "Scan de Ports Réel", 
         "Interception sites visités", 
         "Simulation SIEM",
-        "X-osint (Recherche Pseudo/Email)",
+        "X-osint (Recherche Pseudo Réelle)",
         "OSINT Combiné (IP & Téléphone)",
         "Numéro ➔ IP / Réseau",
         "Vérif. Comptes Compromis (Téléphone)",
@@ -121,22 +121,20 @@ if menu == "Chiffrement IP":
         st.success(f"Rapport généré pour la cible {ip_cible} et chiffré avec succès !")
         st.code("XLFYfy7...[données_chiffrées_aes256]...329A", language="text")
 
-# --- MODULE 2 : VRAI SCAN NMAP ---
-elif menu == "Vrai Scan Nmap":
-    st.subheader("🔍 Vrai Scan Nmap (Intégration Réseau)")
-    st.write("Exécute un balayage Nmap réel si l'outil est installé sur la machine hôte.")
+# --- MODULE 2 : VRAI SCAN RÉSEAU (CLOUD & LOCAL) ---
+elif menu == "Vrai Scan Réseau (Cloud)":
+    st.subheader("🔍 Scan de Ports et d'Hôtes Actif")
+    st.write("Analyse les ports ouverts via des sockets TCP natifs (parfait et fonctionnel sur le Cloud).")
     
     cible_nmap = st.text_input("IP ou domaine cible (ex: scanme.nmap.org)", "scanme.nmap.org")
-    ports_nmap = st.text_input("Ports à scanner (ex: 21,22,80,443)", "21,22,80,443,8080")
+    ports_a_tester = [21, 22, 80, 443, 8080, 3306]
     
-    if st.button("Lancer le vrai scan Nmap"):
-        if not NMAP_AVAILABLE:
-            st.warning("⚠️ La bibliothèque Python `python-nmap` n'est pas installée. Basculement sur un scan de ports TCP natif sécurisé :")
-            ports_liste = [21, 22, 80, 443, 8080]
-            for p in ports_liste:
+    if st.button("Lancer le scan TCP réel"):
+        with st.spinner(fidation := f"Analyse de {cible_nmap} en cours..."):
+            for p in ports_a_tester:
                 try:
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(1.0)
+                    s.settimeout(1.5)
                     res = s.connect_ex((cible_nmap, p))
                     s.close()
                     if res == 0:
@@ -145,34 +143,6 @@ elif menu == "Vrai Scan Nmap":
                         st.write(f"Port {p}/tcp : Fermé / Filtré 🔴")
                 except Exception as ex:
                     st.error(f"Erreur sur le port {p} : {ex}")
-        else:
-            with st.spinner(f"Exécution du vrai scan Nmap sur {cible_nmap}..."):
-                try:
-                    nm = nmap.PortScanner()
-                    nm.scan(cible_nmap, ports_nmap, arguments='-sT -T4')
-                    
-                    if cible_nmap in nm.all_hosts():
-                        st.success(f"✅ Scan réussi pour : `{cible_nmap}`")
-                        st.write(f"- **Statut de l'hôte** : `{nm[cible_nmap].state()}`")
-                        
-                        for proto in nm[cible_nmap].all_protocols():
-                            st.markdown(f"### Protocole : {proto.upper()}")
-                            ports = nm[cible_nmap][proto].keys()
-                            for port in ports:
-                                det = nm[cible_nmap][proto][port]
-                                etat = det['state']
-                                service = det['name']
-                                produit = det.get('product', '')
-                                version = det.get('version', '')
-                                
-                                if etat == 'open':
-                                    st.success(f"Port **{port}/{proto}** : **OUVERT** 🟢 (Service: `{service}` {produit} {version})")
-                                else:
-                                    st.write(f"Port **{port}/{proto}** : `{etat}` 🔴")
-                    else:
-                        st.warning("⚠️ Aucun résultat retourné par Nmap (hôte potentiellement protégé ou injoignable).")
-                except Exception as e:
-                    st.error(f"❌ Erreur système Nmap (Vérifiez que le binaire Nmap est installé sur le serveur). Détail : {e}")
 
 # --- MODULE 3 : OSINT TÉLÉPHONE (RÉEL & AVANCÉ) ---
 elif menu == "OSINT Téléphone (Réel & Avancé)":
@@ -186,7 +156,6 @@ elif menu == "OSINT Téléphone (Réel & Avancé)":
                 pays = geocoder.description_for_number(parsed, "fr")
                 op = carrier.name_for_number(parsed, "fr")
                 type_ligne = number_type(parsed)
-                time_zones = timezone.time_zones_for_number(parsed)
                 
                 types_dict = {
                     phonenumbers.PhoneNumberType.MOBILE: "Mobile",
@@ -251,12 +220,35 @@ elif menu == "Interception sites visités":
         maintenant = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.success(f"Capture réussie pour : {num_intercep} à {maintenant}")
 
-# --- MODULE 7 : X-OSINT ---
-elif menu == "X-osint (Recherche Pseudo/Email)":
-    st.subheader("🕵️‍♂️ Module d'investigation X-osint")
-    cible_osint = st.text_input("Entrer un pseudo ou un e-mail", "hacker_test")
-    if st.button("Lancer l'investigation"):
-        st.success("Investigation terminée avec succès !")
+# --- MODULE 7 : X-OSINT (RECHERCHE PSEUDO RÉELLE) ---
+elif menu == "X-osint (Recherche Pseudo Réelle)":
+    st.subheader("🕵️‍♂️ Module d'investigation X-osint (Réel sur le Web)")
+    cible_osint = st.text_input("Entrer un pseudo (username) à traquer", "hacker_test")
+    
+    if st.button("Lancer l'investigation réelle"):
+        if not cible_osint:
+            st.warning("Veuillez entrer un pseudo valide.")
+        else:
+            sites = {
+                "GitHub": f"https://github.com/{cible_osint}",
+                "Twitter/X": f"https://twitter.com/{cible_osint}",
+                "Instagram": f"https://www.instagram.com/{cible_osint}/",
+                "TikTok": f"https://www.tiktok.com/@{cible_osint}"
+            }
+            st.write(f"Vérification de l'existence du pseudo **{cible_osint}** sur les plateformes...")
+            headers = {"User-Agent": "Mozilla/5.0"}
+            
+            for nom_site, url in sites.items():
+                try:
+                    reponse = requests.get(url, headers=headers, timeout=4)
+                    if reponse.status_code == 200:
+                        st.success(f"[{nom_site}] Compte trouvé ou accessible : {url}")
+                    elif reponse.status_code == 404:
+                        st.info(f"[{nom_site}] Aucun compte existant (404).")
+                    else:
+                        st.warning(f"[{nom_site}] Réponse HTTP : {reponse.status_code}")
+                except Exception:
+                    st.error(f"[{nom_site}] Délai de connexion dépassé.")
 
 # --- MODULE 8 : OSINT COMBINÉ ---
 elif menu == "OSINT Combiné (IP & Téléphone)":
@@ -269,9 +261,32 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
 # --- MODULE 9 : NUMÉRO ➔ IP / RÉSEAU ---
 elif menu == "Numéro ➔ IP / Réseau":
     st.subheader("📱➔🌐 Analyse Réelle Opérateur & Infrastructure")
-    tel_cible = st.text_input("Entrer le numéro", "+33612345678")
+    tel_cible = st.text_input("Entrer le numéro (ex: +34613946208)", "+34613946208")
+    
     if st.button("Analyser"):
-        st.success("Analyse d'infrastructure terminée.")
+        try:
+            parsed = phonenumbers.parse(tel_cible)
+            if phonenumbers.is_valid_number(parsed):
+                pays = geocoder.description_for_number(parsed, "fr")
+                op = carrier.name_for_number(parsed, "fr")
+                type_ligne = number_type(parsed)
+                
+                types_dict = {
+                    phonenumbers.PhoneNumberType.MOBILE: "Mobile",
+                    phonenumbers.PhoneNumberType.FIXED_LINE: "Fixe",
+                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)",
+                    phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile"
+                }
+                
+                st.success("Analyse d'infrastructure terminée avec succès !")
+                st.write(f"- **Numéro formaté** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
+                st.write(f"- **Pays / Région** : `{pays if pays else 'Inconnu'}`")
+                st.write(f"- **Opérateur réseau** : `{op if op else 'Non public / Porté'}`")
+                st.write(f"- **Type de ligne** : `{types_dict.get(type_ligne, 'Autre')}`")
+            else:
+                st.error("❌ Le numéro saisi est invalide ou mal formaté.")
+        except Exception as e:
+            st.error(f"Erreur lors de l'analyse du numéro : {e}")
 
 # --- MODULE 10 : COMPTES COMPROMIS ---
 elif menu == "Vérif. Comptes Compromis (Téléphone)":
