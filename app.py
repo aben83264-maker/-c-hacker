@@ -98,15 +98,13 @@ menu = st.sidebar.selectbox(
     [
         "Chiffrement IP", 
         "Vrai Scan Réseau (Cloud)", 
-        "OSINT Téléphone (Réel & Avancé)", 
+        "OSINT Téléphone & Réseaux Sociaux", 
         "Géolocalisation IP Réelle", 
         "Scan de Ports Réel", 
-        "Lien Piège IP (IP Logger)", 
         "Simulation SIEM",
         "X-osint (Recherche Pseudo Réelle)",
         "OSINT Combiné (IP & Téléphone)",
-        "Numéro ➔ IP / Réseau",
-        "Vérif. Comptes Compromis (Téléphone)",
+        "Vérif. Comptes Compromis",
         "📡 Alerte GSM (SMS)"
     ]
 )
@@ -144,18 +142,21 @@ elif menu == "Vrai Scan Réseau (Cloud)":
                 except Exception as ex:
                     st.error(f"Erreur sur le port {p} : {ex}")
 
-# --- MODULE 3 : OSINT TÉLÉPHONE (RÉEL & AVANCÉ) ---
-elif menu == "OSINT Téléphone (Réel & Avancé)":
-    st.subheader("📱 Analyse OSINT Avancée d'un Numéro")
-    numero_input = st.text_input("Numéro au format international (ex: +33612345678)", "+33612345678")
+# --- MODULE 3 : OSINT TÉLÉPHONE & RÉSEAUX SOCIAUX ---
+elif menu == "OSINT Téléphone & Réseaux Sociaux":
+    st.subheader("📱 OSINT Avancé & Traçage Réseaux Sociaux par Numéro")
+    st.write("Analyse les métadonnées de la ligne et génère des passerelles de recherche directes vers les plateformes sociales.")
     
-    if st.button("Lancer l'analyse avancée"):
+    numero_input = st.text_input("Numéro au format international (ex: +34613946208)", "+34613946208")
+    
+    if st.button("Lancer l'investigation complète"):
         try:
             parsed = phonenumbers.parse(numero_input)
             if phonenumbers.is_valid_number(parsed):
                 pays = geocoder.description_for_number(parsed, "fr")
                 op = carrier.name_for_number(parsed, "fr")
                 type_ligne = number_type(parsed)
+                clean_num = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164).replace("+", "")
                 
                 types_dict = {
                     phonenumbers.PhoneNumberType.MOBILE: "Mobile",
@@ -164,12 +165,23 @@ elif menu == "OSINT Téléphone (Réel & Avancé)":
                     phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile"
                 }
                 
-                st.success("Analyse du numéro réussie !")
+                st.success("Analyse de la ligne réussie !")
+                st.markdown("### 📊 Métadonnées de l'infrastructure :")
+                st.write(f"- **Numéro formaté** : `+{clean_num}`")
                 st.write(f"- **Pays / Région** : `{pays if pays else 'Inconnu'}`")
-                st.write(f"- **Opérateur d'origine** : `{op if op else 'Non public / Porté'}`")
+                st.write(f"- **Opérateur réseau** : `{op if op else 'Non public / Porté'}`")
                 st.write(f"- **Type de ligne** : `{types_dict.get(type_ligne, 'Autre')}`")
+                
+                st.markdown("---")
+                st.markdown("### 🔍 Passerelles d'investigation Sociale (Liens directs) :")
+                st.write("Cliquez sur ces liens pour vérifier instantanément la présence de ce numéro sur les applications :")
+                
+                # Génération de liens dynamiques OSINT réels
+                st.markdown(f"- 🟢 **Vérifier WhatsApp** : [Ouvrir le chat direct](https://wa.me/{clean_num}) *(Si le lien s'ouvre sur un profil, le numéro possède un compte actif)*")
+                st.markdown(f"- 🔵 **Recherche Google Avancée (Dorking)** : [Rechercher le numéro sur le Web](https://www.google.com/search?q=%22+{clean_num}%22)")
+                st.markdown(f"- 📱 **Recherche sans indicatif** : [Recherche alternative](https://www.google.com/search?q=%22{clean_num[2:]}%22)")
             else:
-                st.error("❌ Ce numéro est invalide.")
+                st.error("❌ Ce numéro est invalide ou mal formaté.")
         except Exception as e:
             st.error(f"Erreur d'analyse : {e}")
 
@@ -212,34 +224,7 @@ elif menu == "Scan de Ports Réel":
             except Exception as e:
                 st.error(f"Erreur sur le port {port} : {e}")
 
-# --- MODULE 6 : LIEN PIÈGE IP (IP LOGGER) ---
-elif menu == "Lien Piège IP (IP Logger)":
-    st.subheader("🎣 Générateur de Lien Piège pour Capture d'IP")
-    st.write("Générez un lien de redirection personnalisé. Dès que votre cible clique dessus, son IP réelle est enregistrée.")
-    
-    # Récupération automatique de l'URL de l'application en cours
-    app_url = st.query_params.get("app_url", "https://votre-app.streamlit.app")
-    campagne_id = st.text_input("Identifiant ou nom de la cible (pour le suivi)", "cible_01")
-    
-    if st.button("Générer le lien de traçage"):
-        lien_piege = f"{app_url}?target={campagne_id}"
-        st.success("✅ Lien généré avec succès ! Envoyez ce lien à votre cible (via SMS ou réseaux sociaux) :")
-        st.code(lien_piege, language="text")
-        st.info("💡 Astuce : Dès qu'elle cliquera, rechargez cette page ou consultez les requêtes entrantes de votre tableau de bord cloud.")
-
-    st.markdown("---")
-    st.subheader("📥 Journal des Cibles Ayant Ciqué (Logs IP)")
-    # Simulation/Lecture des paramètres de requête entrants (Paramètre 'target' cliqué)
-    params = st.query_params
-    if "target" in params:
-        target_clique = params.get("target")
-        # Récupération des headers de la requête entrante si disponible ou simulation de l'IP du client connecteur
-        st.warning(action_log := f"🚨 ALERTE : Connexion détectée pour la campagne / cible : **{target_clique}**")
-        st.write("🌐 **Adresse IP enregistrée** : *Détectée via le flux HTTP de la requête entrante*")
-    else:
-        st.info("Aucun clic récent enregistré pour l'instant. En attente d'interaction sur le lien piège...")
-
-# --- MODULE 7 : X-OSINT (RECHERCHE PSEUDO RÉELLE) ---
+# --- MODULE 6 : X-OSINT (RECHERCHE PSEUDO RÉELLE) ---
 elif menu == "X-osint (Recherche Pseudo Réelle)":
     st.subheader("🕵️‍♂️ Module d'investigation X-osint (Réel sur le Web)")
     cible_osint = st.text_input("Entrer un pseudo (username) à traquer", "hacker_test")
@@ -269,7 +254,7 @@ elif menu == "X-osint (Recherche Pseudo Réelle)":
                 except Exception:
                     st.error(f"[{nom_site}] Délai de connexion dépassé.")
 
-# --- MODULE 8 : OSINT COMBINÉ ---
+# --- MODULE 7 : OSINT COMBINÉ ---
 elif menu == "OSINT Combiné (IP & Téléphone)":
     st.subheader("🔗 Corrélation IP & Téléphone")
     ip_input = st.text_input("Adresse IP cible", "8.8.8.8")
@@ -295,38 +280,8 @@ elif menu == "OSINT Combiné (IP & Téléphone)":
         except Exception as e:
             st.error(f"Erreur lors de la corrélation : {e}")
 
-# --- MODULE 9 : NUMÉRO ➔ IP / RÉSEAU ---
-elif menu == "Numéro ➔ IP / Réseau":
-    st.subheader("📱➔🌐 Analyse Réelle Opérateur & Infrastructure")
-    tel_cible = st.text_input("Entrer le numéro (ex: +34613946208)", "+34613946208")
-    
-    if st.button("Analyser"):
-        try:
-            parsed = phonenumbers.parse(tel_cible)
-            if phonenumbers.is_valid_number(parsed):
-                pays = geocoder.description_for_number(parsed, "fr")
-                op = carrier.name_for_number(parsed, "fr")
-                type_ligne = number_type(parsed)
-                
-                types_dict = {
-                    phonenumbers.PhoneNumberType.MOBILE: "Mobile",
-                    phonenumbers.PhoneNumberType.FIXED_LINE: "Fixe",
-                    phonenumbers.PhoneNumberType.VOIP: "VoIP (Internet)",
-                    phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE: "Fixe ou Mobile"
-                }
-                
-                st.success("Analyse d'infrastructure terminée avec succès !")
-                st.write(f"- **Numéro formaté** : `{phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}`")
-                st.write(f"- **Pays / Région** : `{pays if pays else 'Inconnu'}`")
-                st.write(f"- **Opérateur réseau** : `{op if op else 'Non public / Porté'}`")
-                st.write(f"- **Type de ligne** : `{types_dict.get(type_ligne, 'Autre')}`")
-            else:
-                st.error("❌ Le numéro saisi est invalide ou mal formaté.")
-        except Exception as e:
-            st.error(f"Erreur lors de l'analyse du numéro : {e}")
-
-# --- MODULE 10 : COMPTES COMPROMIS ---
-elif menu == "Vérif. Comptes Compromis (Téléphone)":
+# --- MODULE 8 : COMPTES COMPROMIS ---
+elif menu == "Vérif. Comptes Compromis":
     st.subheader("⚠ Vérification Réelle des Fuites de Données")
     num_compromis = st.text_input("Entrer l'identifiant ou le téléphone", "+33612345678")
     
@@ -340,7 +295,7 @@ elif menu == "Vérif. Comptes Compromis (Téléphone)":
             except Exception as e:
                 st.error(f"Erreur de recherche : {e}")
 
-# --- MODULE 11 : ALERTE GSM ---
+# --- MODULE 9 : ALERTE GSM ---
 elif menu == "📡 Alerte GSM (SMS)":
     st.subheader("📡 Gestion du Module GSM & Envoi de SMS")
     port_serie = st.text_input("Port série", "COM3")
